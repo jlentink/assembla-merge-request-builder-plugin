@@ -7,20 +7,15 @@ import hudson.model.Cause;
  */
 public class AssemblaCause extends Cause {
     private final Integer mergeRequestId;
-    private final String sourceName;
     private final String sourceRepository;
     private final String sourceBranch;
     private final String targetBranch;
     private final String description;
-    private final String sourceProjectName;
-    private final String lastCommitId;
+    private final String sourceSpaceId;
+    private final String title;
 
     public Integer getMergeRequestId() {
         return mergeRequestId;
-    }
-
-    public String getSourceName() {
-        return sourceName;
     }
 
     public String getSourceRepository() {
@@ -39,27 +34,33 @@ public class AssemblaCause extends Cause {
         return description;
     }
 
-    public String getSourceProjectName() {
-        return sourceProjectName;
+    public String getSourceSpaceId() {
+        return sourceSpaceId;
     }
 
-    public String getLastCommitId() {
-        return lastCommitId;
+    public String getTitle() {
+        return title;
     }
 
-    public AssemblaCause(Integer mergeRequestId, String sourceName, String sourceRepository, String sourceBranch, String targetBranch, String description, String sourceProjectName, String lastCommitId) {
+    public AssemblaCause(Integer mergeRequestId,
+                         String sourceRepository,
+                         String sourceBranch,
+                         String targetBranch,
+                         String description,
+                         String sourceSpaceId,
+                         String title) {
+
         this.mergeRequestId = mergeRequestId;
-        this.sourceName = sourceName;
         this.sourceRepository = sourceRepository;
         this.sourceBranch = sourceBranch;
         this.targetBranch = targetBranch;
         this.description = description;
-        this.sourceProjectName = sourceProjectName;
-        this.lastCommitId = lastCommitId;
+        this.sourceSpaceId = sourceSpaceId;
+        this.title = title;
     }
 
     @Override
     public String getShortDescription() {
-        return "Assembla Merge Request #" + mergeRequestId + " : " + sourceName + "/" + sourceBranch + " => " + targetBranch;
+        return "Assembla Merge Request #" + mergeRequestId + " : " + sourceRepository + "/" + sourceBranch + " => " + targetBranch;
     }
 }
