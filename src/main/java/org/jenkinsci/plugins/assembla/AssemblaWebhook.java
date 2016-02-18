@@ -29,11 +29,6 @@ import java.util.regex.Pattern;
 @Extension
 public class AssemblaWebhook implements UnprotectedRootAction {
     private static final Logger LOGGER = Logger.getLogger(AssemblaWebhook.class.getName());
-    private static AssemblaBuildTrigger trigger;
-
-    public static void setTrigger(AssemblaBuildTrigger trigger) {
-        AssemblaWebhook.trigger = trigger;
-    }
 
     @Override
     public String getIconFileName() {
@@ -58,18 +53,38 @@ public class AssemblaWebhook implements UnprotectedRootAction {
         WebhookPayload payload = gson.fromJson(body, WebhookPayload.class);
         LOGGER.info("Merge request ID: " + String.valueOf(payload.getMergeRequestId()));
 
-        if (payload.isMergeRequestEvent()) {
-            LOGGER.info("Event is merge request action");
-            for (AbstractProject<?, ?> project : getTriggers(payload)) {
-                AssemblaBuildTrigger trigger = project.getTrigger(AssemblaBuildTrigger.class);
+        if (payload.shouldTriggerBuild()) {
+            SpaceTool tool = AssemblaBuildTrigger
+                    .getAssembla()
+                    .findRepoByUrl(payload.getSpace(), payload.getRepositoryUrl());
 
-                MergeRequest mr = AssemblaBuildTrigger.getAssembla()
-                                    .findMergeRequest(
-                                        payload.getSpace(),
-                                        trigger.getRepoName(),
-                                        payload.getMergeRequestId()
-                                    );
-                LOGGER.info("MR: " + mr.toString());
+            if (tool == null) {
+                LOGGER.info(
+                    "Can not find tool with url: " + payload.getRepositoryUrl() + ", space: " + payload.getSpace()
+                );
+                return;
+            }
+
+            MergeRequest mr = AssemblaBuildTrigger.getAssembla()
+                    .findMergeRequest(
+                            payload.getSpace(),
+                            tool.getName(),
+                            payload.getMergeRequestId()
+                    );
+
+            if (mr == null) {
+                LOGGER.info(
+                    "Can not find MR with ID: " + payload.getMergeRequestId() + ", tool: " + tool.getName() + ", space: " + payload.getSpace()
+                );
+                return;
+            }
+
+            LOGGER.info("MR: " + mr.toString());
+
+            LOGGER.info("Space name: " + payload.getSpace() + " Tool name: " + tool.getName());
+
+            for (AbstractProject<?, ?> project : getTriggers(payload.getSpace(), tool.getName())) {
+                AssemblaBuildTrigger trigger = project.getTrigger(AssemblaBuildTrigger.class);
 
                 if (trigger != null) {
                     LOGGER.info("Trigger is present!");
@@ -104,12 +119,8 @@ public class AssemblaWebhook implements UnprotectedRootAction {
         return body;
     }
 
-    private Set<AbstractProject<?, ?>> getTriggers(WebhookPayload payload) {
-        // TODO: Implement me
-//        MergeRequest mergeRequest = AssemblaBuildTrigger
-//                                        .getAssembla()
-//                                        .findMergeRequest(payload.getSpace(), payload.getMergeRequestId());
-        Set<AbstractProject<?, ?>> triggers = AssemblaBuildTrigger.getDesc().getRepoTriggers("git-5");
+    private Set<AbstractProject<?, ?>> getTriggers(String spaceName, String repoName) {
+        Set<AbstractProject<?, ?>> triggers = AssemblaBuildTrigger.getDesc().getRepoTriggers(spaceName, repoName);
         LOGGER.info("Triggers count: " + triggers.size());
         return triggers;
     }

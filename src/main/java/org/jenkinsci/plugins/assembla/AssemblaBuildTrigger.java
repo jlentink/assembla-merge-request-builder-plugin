@@ -47,14 +47,14 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             return;
         }
 
-        DESCRIPTOR.addRepoTrigger(repoName, super.job);
+        DESCRIPTOR.addRepoTrigger(this, super.job);
     }
 
     @Override
     public void stop() {
         LOGGER.info("Trigger stopped. Repo name: " + repoName);
         if (!StringUtils.isEmpty(repoName)) {
-            DESCRIPTOR.removeRepoTrigger(repoName, super.job);
+            DESCRIPTOR.removeRepoTrigger(this, super.job);
         }
         super.stop();
     }
@@ -206,46 +206,54 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             return failureMessage;
         }
 
-        public void addRepoTrigger(String repoName, AbstractProject<?, ?> project) {
-            if (project == null || StringUtils.isEmpty(repoName)) {
+        public void addRepoTrigger(AssemblaBuildTrigger trigger, AbstractProject<?, ?> project) {
+            String projectKey = getProjectKey(trigger);
+            if (project == null || StringUtils.isEmpty(projectKey)) {
                 LOGGER.info("Not adding a trigger");
                 LOGGER.info("project is: " + project);
-                LOGGER.info("repo name is: " + repoName);
+                LOGGER.info("repo name is: " + projectKey);
                 return;
             }
-            LOGGER.info("Adding trigger for repo: " + repoName);
+            LOGGER.info("Adding trigger for repo: " + projectKey);
 
             synchronized (repoJobs) {
-                Set<AbstractProject<?, ?>> projects = repoJobs.get(repoName);
+                Set<AbstractProject<?, ?>> projects = repoJobs.get(projectKey);
 
                 if (projects == null) {
-                    projects = new HashSet<AbstractProject<?, ?>>();
-                    repoJobs.put(repoName, projects);
+                    projects = new HashSet<>();
+                    repoJobs.put(projectKey, projects);
                 }
 
-                // TODO: Use tool ID instead of repo name, because it's not unique between projects
                  projects.add(project);
             }
         }
 
-        public void removeRepoTrigger(String repoName, AbstractProject<?, ?> project) {
-            Set<AbstractProject<?, ?>> projects = repoJobs.get(repoName);
-            if (project == null || projects == null || StringUtils.isEmpty(repoName)) {
+        public void removeRepoTrigger(AssemblaBuildTrigger trigger, AbstractProject<?, ?> project) {
+            String projectKey = getProjectKey(trigger);
+            Set<AbstractProject<?, ?>> projects = repoJobs.get(projectKey);
+            if (project == null || projects == null || StringUtils.isEmpty(projectKey)) {
                 return;
             }
-            LOGGER.info("Removing trigger for repo: " + repoName);
-            // TODO: Use tool ID instead of repo name, because it's not unique between projects
-            projects.remove(repoName);
+            LOGGER.info("Removing trigger for repo: " + projectKey);
+            projects.remove(project);
         }
 
-        public Set<AbstractProject<?, ?>> getRepoTriggers(String repoName) {
-            Set<AbstractProject<?, ?>> projects = repoJobs.get(repoName);
+        public Set<AbstractProject<?, ?>> getRepoTriggers(String spaceName, String repoName) {
+            Set<AbstractProject<?, ?>> projects = repoJobs.get(getProjectKey(spaceName, repoName));
 
             if (projects == null) {
                 projects = new HashSet<>();
             }
 
             return projects;
+        }
+
+        private String getProjectKey(AssemblaBuildTrigger trigger) {
+            return getProjectKey(trigger.getSpaceName(), trigger.getRepoName());
+        }
+
+        private String getProjectKey(String spaceName, String repoName) {
+            return spaceName + ":" + repoName;
         }
     }
 

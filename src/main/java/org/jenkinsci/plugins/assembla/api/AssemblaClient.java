@@ -40,22 +40,22 @@ public class AssemblaClient {
         return gson.fromJson(apiRequest(requestPath, Method.GET), MergeRequest.class);
     }
 
-    public SpaceTool findSpaceTool(String spaceName, String id) {
+    public SpaceTool findTool(String spaceName, String id) {
         String requestPath = "spaces/" + spaceName + "/space_tools/" + id;
         return gson.fromJson(apiRequest(requestPath, Method.GET), SpaceTool.class);
     }
 
-    public SpaceTool findSpaceToolByName(String spaceName, String name) {
-        for (SpaceTool tool : findSpaceTools(spaceName)) {
-            if (tool.getName().equals(name)) {
+    public SpaceTool findRepoByUrl(String spaceName, String url) {
+        for (SpaceTool tool : findRepos(spaceName)) {
+            if (tool.getUrl().equals(url)) {
                 return tool;
             }
         }
         return null;
     }
 
-    public List<SpaceTool> findSpaceTools(String spaceName) {
-        String requestPath = "spaces/" + spaceName + "/space_tools/";
+    public List<SpaceTool> findRepos(String spaceName) {
+        String requestPath = "spaces/" + spaceName + "/space_tools/repo";
         Type listType = new TypeToken<ArrayList<SpaceTool>>() {
         }.getType();
         return gson.fromJson(apiRequest(requestPath, Method.GET), listType);
@@ -65,7 +65,7 @@ public class AssemblaClient {
         String url = getRequestUrl(path);
         HttpClient client = new HttpClient();
         HttpMethodBase method;
-        byte[] responseBody = new byte[0];
+        String responseBody = "";
 
         if (requestMethod == Method.GET) {
             method = new GetMethod(url);
@@ -77,23 +77,25 @@ public class AssemblaClient {
         method.setRequestHeader("X-Api-Secret", apiSecret);
 
         try {
-            LOGGER.info("Starting request to Assembla API...");
+            LOGGER.info("Starting " + method.getName() + " " + url + " request to Assembla API");
 
             int statusCode = client.executeMethod(method);
 
             if (statusCode != HttpStatus.SC_OK) {
                 LOGGER.severe("Request for " + url + " failed, server returned: " + method.getStatusLine());
             }
-            responseBody = method.getResponseBody();
+
+            byte[] responseBuffer = method.getResponseBody();
+            responseBody = new String(responseBuffer);
+            LOGGER.info("Assembla API response: " + responseBody);
 
         } catch (IOException e) {
             LOGGER.severe("Net for " + url + " failed, server returned: " + method.getStatusLine());
         } finally {
-            // Release the connection.
             method.releaseConnection();
         }
 
-        return new String(responseBody);
+        return responseBody;
     }
 
     private String getRequestUrl(String path) {

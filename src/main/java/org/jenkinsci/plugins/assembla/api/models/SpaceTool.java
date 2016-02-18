@@ -1,5 +1,7 @@
 package org.jenkinsci.plugins.assembla.api.models;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.Date;
 
 /**
@@ -7,13 +9,17 @@ import java.util.Date;
  */
 public class SpaceTool {
     private String id;
+    @SerializedName("space_id")
     private String spaceId;
     private boolean active;
     private String url;
     private int number;
+    @SerializedName("tool_id")
     private int toolId;
     private String type;
+    @SerializedName("parent_id")
     private String parentId;
+    @SerializedName("menu_name")
     private String menuName;
     private String name;
 

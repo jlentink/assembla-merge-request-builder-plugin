@@ -109,6 +109,10 @@ public class WebhookPayload {
         return object.equals("Merge request");
     }
 
+    public boolean shouldTriggerBuild() {
+        return isMergeRequestEvent() &&  (action.equals("updated") || action.equals("created"));
+    }
+
     @Override
     public String toString() {
         return "WebhookPayload{" +
