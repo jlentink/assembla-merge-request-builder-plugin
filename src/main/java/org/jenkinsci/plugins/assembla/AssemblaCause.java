@@ -7,7 +7,8 @@ import hudson.model.Cause;
  */
 public class AssemblaCause extends Cause {
     private final Integer mergeRequestId;
-    private final String sourceRepository;
+    private final String sourceRepositoryUrl;
+    private final String sourceRepositoryName;
     private final String sourceBranch;
     private final String targetBranch;
     private final String description;
@@ -18,8 +19,12 @@ public class AssemblaCause extends Cause {
         return mergeRequestId;
     }
 
-    public String getSourceRepository() {
-        return sourceRepository;
+    public String getSourceRepositoryUrl() {
+        return sourceRepositoryUrl;
+    }
+
+    public String getSourceRepositoryName() {
+        return sourceRepositoryName;
     }
 
     public String getSourceBranch() {
@@ -43,7 +48,8 @@ public class AssemblaCause extends Cause {
     }
 
     public AssemblaCause(Integer mergeRequestId,
-                         String sourceRepository,
+                         String sourceRepositoryUrl,
+                         String sourceRepositoryName,
                          String sourceBranch,
                          String targetBranch,
                          String description,
@@ -51,7 +57,8 @@ public class AssemblaCause extends Cause {
                          String title) {
 
         this.mergeRequestId = mergeRequestId;
-        this.sourceRepository = sourceRepository;
+        this.sourceRepositoryUrl = sourceRepositoryUrl;
+        this.sourceRepositoryName = sourceRepositoryName;
         this.sourceBranch = sourceBranch;
         this.targetBranch = targetBranch;
         this.description = description;
@@ -61,6 +68,6 @@ public class AssemblaCause extends Cause {
 
     @Override
     public String getShortDescription() {
-        return "Assembla Merge Request #" + mergeRequestId + " : " + sourceRepository + "/" + sourceBranch + " => " + targetBranch;
+        return "Assembla Merge Request #" + mergeRequestId + " : " + sourceRepositoryUrl + "/" + sourceBranch + " => " + targetBranch;
     }
 }

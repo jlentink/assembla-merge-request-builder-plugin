@@ -2,12 +2,10 @@ package org.jenkinsci.plugins.assembla;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.sun.scenario.effect.Merge;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.UnprotectedRootAction;
 import org.apache.commons.io.IOUtils;
-import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
 import org.kohsuke.stapler.StaplerRequest;
@@ -15,12 +13,8 @@ import org.kohsuke.stapler.StaplerResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by pavel on 16/2/16.
@@ -51,12 +45,12 @@ public class AssemblaWebhook implements UnprotectedRootAction {
         LOGGER.info("Webhook payload: " + body);
         Gson gson = new GsonBuilder().create();
         WebhookPayload payload = gson.fromJson(body, WebhookPayload.class);
-        LOGGER.info("Merge request ID: " + String.valueOf(payload.getMergeRequestId()));
 
         if (payload.shouldTriggerBuild()) {
+            LOGGER.info("Merge request ID: " + String.valueOf(payload.getMergeRequestId()));
             SpaceTool tool = AssemblaBuildTrigger
                     .getAssembla()
-                    .findRepoByUrl(payload.getSpace(), payload.getRepositoryUrl());
+                    .getRepoByUrl(payload.getSpace(), payload.getRepositoryUrl());
 
             if (tool == null) {
                 LOGGER.info(
@@ -66,7 +60,7 @@ public class AssemblaWebhook implements UnprotectedRootAction {
             }
 
             MergeRequest mr = AssemblaBuildTrigger.getAssembla()
-                    .findMergeRequest(
+                    .getMergeRequest(
                             payload.getSpace(),
                             tool.getName(),
                             payload.getMergeRequestId()
@@ -91,6 +85,7 @@ public class AssemblaWebhook implements UnprotectedRootAction {
                     trigger.handleMergeRequest(new AssemblaCause(
                         mr.getId(),
                         payload.getRepositoryUrl(),
+                        tool.getName(),
                         mr.getSourceSymbol(),
                         mr.getTargetSymbol(),
                         mr.getDescription(),

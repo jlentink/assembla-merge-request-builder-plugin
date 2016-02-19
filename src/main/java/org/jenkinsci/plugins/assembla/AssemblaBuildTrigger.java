@@ -10,7 +10,6 @@ import hudson.util.Secret;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.assembla.api.AssemblaClient;
-import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -27,6 +26,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     private final String spaceName;
     private final String repoName;
+    private transient AssemblaBuilder builder;
 
     @DataBoundConstructor
     public AssemblaBuildTrigger(String spaceName, String repoName) {
@@ -64,7 +64,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
         values.put("assemblaMergeRequestId", new StringParameterValue("assemblaMergeRequestId", String.valueOf(cause.getMergeRequestId())));
         values.put("assemblaSourceSpaceId", new StringParameterValue("assemblaSourceSpaceId", cause.getSourceSpaceId()));
-        values.put("assemblaSourceRepository", new StringParameterValue("assemblaSourceRepository", cause.getSourceRepository()));
+        values.put("assemblaSourceRepositoryUrl", new StringParameterValue("assemblaSourceRepositoryUrl", cause.getSourceRepositoryUrl()));
         values.put("assemblaSourceBranch", new StringParameterValue("assemblaSourceBranch", cause.getSourceBranch()));
         values.put("assemblaTargetBranch", new StringParameterValue("assemblaTargetBranch", cause.getTargetBranch()));
         values.put("assemblaDescription", new StringParameterValue("assemblaDescription", cause.getDescription()));
@@ -102,6 +102,13 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return repoName;
     }
 
+    public AssemblaBuilder getBuilder() {
+        if (builder == null) {
+            builder = new AssemblaBuilder(this);
+        }
+        return builder;
+    }
+
     public void handleMergeRequest(AssemblaCause cause) {
         LOGGER.info("Handling merge request");
         LOGGER.info("Space name: " + spaceName);
@@ -119,6 +126,15 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
                 DESCRIPTOR.getBotApiKey(),
                 DESCRIPTOR.getBotApiSecret()
         );
+    }
+
+    public static AssemblaBuildTrigger getTrigger(AbstractProject project) {
+        Trigger trigger = project.getTrigger(AssemblaBuildTrigger.class);
+
+        if (trigger == null || !(trigger instanceof AssemblaBuildTrigger)) {
+            return null;
+        }
+        return (AssemblaBuildTrigger) trigger;
     }
 
     public static final class AssemblaBuildTriggerDescriptor extends TriggerDescriptor {

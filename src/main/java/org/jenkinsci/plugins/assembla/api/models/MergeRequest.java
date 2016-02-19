@@ -1,8 +1,10 @@
 package org.jenkinsci.plugins.assembla.api.models;
 
 import com.google.gson.annotations.SerializedName;
+import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by pavel on 16/2/16.
@@ -106,6 +108,10 @@ public class MergeRequest {
         return updatedAt;
     }
 
+    public String getUrl() {
+        return url;
+    }
+
     @Override
     public String toString() {
         return "MergeRequest{" +
@@ -127,9 +133,5 @@ public class MergeRequest {
                 ", updatedAt=" + updatedAt +
                 ", url='" + url + '\'' +
                 '}';
-    }
-
-    public String getUrl() {
-        return url;
     }
 }

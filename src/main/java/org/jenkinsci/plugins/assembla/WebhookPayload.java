@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  */
 public class WebhookPayload {
     private static final Pattern mergeRequestIdPattern = Pattern.compile("(\\d+)");
-    private static final Logger LOGGER = Logger.getLogger(AssemblaWebhook.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(WebhookPayload.class.getName());
 
     private String space;
     private String action;
