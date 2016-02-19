@@ -19,10 +19,7 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
-import org.jenkinsci.plugins.assembla.api.models.MergeRequestComment;
-import org.jenkinsci.plugins.assembla.api.models.MergeRequestVersion;
-import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
+import org.jenkinsci.plugins.assembla.api.models.*;
 
 /**
  * Created by pavel on 16/2/16.
@@ -93,6 +90,38 @@ public class AssemblaClient {
         return gson.fromJson(apiRequest(requestPath, Method.GET), listType);
     }
 
+    public List<Ticket> getMergeRequestTickets(MergeRequest mr) {
+        String requestPath = String.format(
+                "spaces/%s/space_tools/%s/merge_requests/%s/tickets",
+                mr.getTargetSpaceId(),
+                mr.getSpaceToolId(),
+                String.valueOf(mr.getId())
+        );
+        Type listType = new TypeToken<ArrayList<Ticket>>() {
+        }.getType();
+
+        String response = apiRequest(requestPath, Method.GET);
+
+        List<Ticket> tickets = gson.fromJson(response, listType);
+
+        if (tickets == null) {
+            tickets = new ArrayList<>();
+        }
+
+        return tickets;
+    }
+
+    public void createTicketComment(Ticket ticket, String commentText) {
+        TicketCommentWrapper comment = new TicketCommentWrapper(new TicketComment(commentText));
+
+        String requestPath = String.format(
+                "spaces/%s/tickets/%s/ticket_comments",
+                ticket.getSpaceId(),
+                ticket.getNumber()
+        );
+        apiRequest(requestPath, Method.POST, gson.toJson(comment));
+    }
+
     public MergeRequestVersion getLatestVersion(MergeRequest mr) {
         for (MergeRequestVersion mrVersion : this.getMergeRequestVersions(mr)) {
             if (mrVersion.isLatest()) {
@@ -154,6 +183,7 @@ public class AssemblaClient {
                         "application/json",
                         "UTF-8"
                     );
+                    LOGGER.info("Sending payload: " + requestEntity.getContent());
                     postMethod.setRequestEntity(requestEntity);
                 } catch (UnsupportedEncodingException e) {
                     LOGGER.severe("Failed to set request body");
@@ -170,16 +200,18 @@ public class AssemblaClient {
         try {
             LOGGER.info("Starting " + method.getName() + " " + url + " request to Assembla API");
 
-
             int statusCode = client.executeMethod(method);
 
-            if (statusCode != HttpStatus.SC_OK) {
+            if (!(statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED || statusCode == HttpStatus.SC_NO_CONTENT)) {
                 LOGGER.severe("Request for " + url + " failed, server returned: " + method.getStatusLine());
             }
 
             byte[] responseBuffer = method.getResponseBody();
-            responseBody = new String(responseBuffer);
-            LOGGER.info("Assembla API response: " + responseBody);
+
+            if (responseBuffer != null) {
+                responseBody = new String(responseBuffer);
+                LOGGER.info("Assembla API response: " + responseBody);
+            }
 
         } catch (IOException e) {
             LOGGER.severe("Net for " + url + " failed, server returned: " + method.getStatusLine());

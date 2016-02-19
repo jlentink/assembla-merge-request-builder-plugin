@@ -11,6 +11,7 @@ public class AssemblaCause extends Cause {
     private final String sourceRepositoryName;
     private final String sourceBranch;
     private final String targetBranch;
+    private final String commitId;
     private final String description;
     private final String sourceSpaceId;
     private final String title;
@@ -35,6 +36,10 @@ public class AssemblaCause extends Cause {
         return targetBranch;
     }
 
+    public String getCommitId() {
+        return commitId;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -52,6 +57,7 @@ public class AssemblaCause extends Cause {
                          String sourceRepositoryName,
                          String sourceBranch,
                          String targetBranch,
+                         String commitId,
                          String description,
                          String sourceSpaceId,
                          String title) {
@@ -61,6 +67,7 @@ public class AssemblaCause extends Cause {
         this.sourceRepositoryName = sourceRepositoryName;
         this.sourceBranch = sourceBranch;
         this.targetBranch = targetBranch;
+        this.commitId = commitId;
         this.description = description;
         this.sourceSpaceId = sourceSpaceId;
         this.title = title;
@@ -68,6 +75,7 @@ public class AssemblaCause extends Cause {
 
     @Override
     public String getShortDescription() {
-        return "Assembla Merge Request #" + mergeRequestId + " : " + sourceRepositoryUrl + "/" + sourceBranch + " => " + targetBranch;
+        return "Assembla Merge Request #" + mergeRequestId + ": " + title + " - "
+                + sourceRepositoryUrl + "/" + sourceBranch + " => " + targetBranch;
     }
 }

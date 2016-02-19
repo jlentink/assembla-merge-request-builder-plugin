@@ -7,8 +7,10 @@ import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequestVersion;
+import org.jenkinsci.plugins.assembla.api.models.Ticket;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,11 +29,27 @@ public class AssemblaBuilder {
         AssemblaCause cause = getCause(build);
 
         if (cause != null) {
-            MergeRequest mr = AssemblaBuildTrigger.getAssembla().getMergeRequest(
+            AssemblaClient client = AssemblaBuildTrigger.getAssembla();
+            MergeRequest mr = client.getMergeRequest(
                 cause.getSourceSpaceId(),
                 cause.getSourceRepositoryName(),
                 cause.getMergeRequestId()
             );
+
+            if (trigger.isNotifyOnStart()) {
+                String message = "Build started, monitor at " + getBuildUrl(build);
+
+                if (trigger.isTicketComments()) {
+                    for (Ticket ticket : client.getMergeRequestTickets(mr)) {
+                        client.createTicketComment(ticket, message);
+                    }
+                }
+
+                if (trigger.isMergeRequestComments()) {
+                    client.commentMergeRequest(mr, client.getLatestVersion(mr), message);
+                }
+            }
+
             try {
                 build.setDescription(getOnStartedMessage(mr));
             } catch (IOException e) {
@@ -54,29 +72,40 @@ public class AssemblaBuilder {
                 cause.getMergeRequestId()
         );
 
-        Result result = build.getResult();
-        StringBuilder messageBuilder = new StringBuilder();
+        if (mr == null) {
+            LOGGER.info("Could not find Merge Request");
+            return;
+        }
 
-        if (mr != null) {
+        Result result = build.getResult();
+
+
+        String message = new StringBuilder()
+            .append(build.getProject().getDisplayName()).append(" finished with status: ")
+            .append(build.getResult().toString()).append("\n")
+            .append("Source revision: ").append(cause.getCommitId()).append("\n")
+            .append("Build results available at: ").append(getBuildUrl(build)).append("\n")
+            .toString();
+
+        if (trigger.isMergeRequestComments()) {
             MergeRequestVersion mrVersion = client.getLatestVersion(mr);
 
+            client.commentMergeRequest(mr, mrVersion, message);
 
             if (result == Result.SUCCESS) {
                 client.upVoteMergeRequest(mr, mrVersion);
             } else if (result == Result.FAILURE || result == Result.UNSTABLE) {
                 client.downVoteMergeRequest(mr, mrVersion);
             }
-
-            String buildUrl = Jenkins.getInstance().getRootUrl() + build.getUrl();
-
-            messageBuilder
-                .append(build.getResult().toString()).append("\n")
-                .append("Build results available at: ").append(buildUrl).append("\n");
-
-            client.commentMergeRequest(mr, mrVersion, messageBuilder.toString());
         }
 
-        LOGGER.info("Build result: " + result.toString());
+        if (trigger.isTicketComments()) {
+          for (Ticket ticket : client.getMergeRequestTickets(mr)) {
+              client.createTicketComment(ticket, message);
+          }
+        }
+
+        LOGGER.info("Build result: " + result);
     }
 
     private AssemblaCause getCause(AbstractBuild build) {
@@ -89,9 +118,13 @@ public class AssemblaBuilder {
         return (AssemblaCause) cause;
     }
 
+    private String getBuildUrl(AbstractBuild build) {
+        return Jenkins.getInstance().getRootUrl() + build.getUrl();
+    }
+
     private String getOnStartedMessage(MergeRequest mr) {
         String mrUrl = AssemblaBuildTrigger.getAssembla().getMergeRequestWebUrl(mr);
-        return "Merge Request <a href=\"" + mrUrl + "\" target=\"_blank\">#" + mr.getId()
+        return "MR <a href=\"" + mrUrl + "\">#" + mr.getId()
                 + "</a> " + " (" + mr.getSourceSymbol() + " => " + mr.getTargetSymbol() + ")";
     }
 }

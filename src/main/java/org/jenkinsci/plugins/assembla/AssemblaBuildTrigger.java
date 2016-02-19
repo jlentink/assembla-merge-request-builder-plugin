@@ -22,16 +22,24 @@ import java.util.logging.Logger;
  * Created by pavel on 16/2/16.
  */
 public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
+    @Extension
+    public static final AssemblaBuildTriggerDescriptor DESCRIPTOR = new AssemblaBuildTriggerDescriptor();
     private static final Logger LOGGER = Logger.getLogger(AssemblaBuildTrigger.class.getName());
 
     private final String spaceName;
     private final String repoName;
+    private boolean mergeRequestComments;
+    private boolean ticketComments;
+    private boolean notifyOnStart;
     private transient AssemblaBuilder builder;
 
     @DataBoundConstructor
-    public AssemblaBuildTrigger(String spaceName, String repoName) {
+    public AssemblaBuildTrigger(String spaceName, String repoName, boolean mergeRequestComments, boolean ticketComments, boolean notifyOnStart) {
         this.spaceName = spaceName;
         this.repoName = repoName;
+        this.mergeRequestComments = mergeRequestComments;
+        this.ticketComments = ticketComments;
+        this.notifyOnStart = notifyOnStart;
     }
 
     @Override
@@ -86,9 +94,6 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return values;
     }
 
-    @Extension
-    public static final AssemblaBuildTriggerDescriptor DESCRIPTOR = new AssemblaBuildTriggerDescriptor();
-
     @Override
     public AssemblaBuildTriggerDescriptor getDescriptor() {
         return DESCRIPTOR;
@@ -135,6 +140,18 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             return null;
         }
         return (AssemblaBuildTrigger) trigger;
+    }
+
+    public boolean isMergeRequestComments() {
+        return mergeRequestComments;
+    }
+
+    public boolean isTicketComments() {
+        return ticketComments;
+    }
+
+    public boolean isNotifyOnStart() {
+        return notifyOnStart;
     }
 
     public static final class AssemblaBuildTriggerDescriptor extends TriggerDescriptor {

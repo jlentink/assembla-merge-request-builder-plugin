@@ -88,6 +88,7 @@ public class AssemblaWebhook implements UnprotectedRootAction {
                         tool.getName(),
                         mr.getSourceSymbol(),
                         mr.getTargetSymbol(),
+                        payload.getCommitId(),
                         mr.getDescription(),
                         mr.getTargetSpaceId(),
                         mr.getTitle()
