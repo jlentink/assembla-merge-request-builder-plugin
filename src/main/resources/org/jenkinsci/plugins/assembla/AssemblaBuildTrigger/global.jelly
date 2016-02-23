@@ -8,6 +8,9 @@
       description="API secret for jenkins user">
       <f:password />
     </f:entry>
+    <f:validateButton
+       title="${%Test credentials}" progress="${%Checking...}"
+       method="testCredentials" with="botApiKey,botApiSecret" />
     <f:entry title="Success message" field="successMessage"
       description="Message for successful build result">
       <f:textarea />

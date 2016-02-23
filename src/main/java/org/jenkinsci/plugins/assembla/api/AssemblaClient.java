@@ -14,7 +14,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.gson.reflect.TypeToken;
-import com.sun.scenario.effect.Merge;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -39,26 +38,19 @@ public class AssemblaClient {
         this.gson = new GsonBuilder().create();
     }
 
-    public String getMergeRequestWebUrl(MergeRequest mr) {
-        String url = "";
-        try {
-            url = new URL(
-                new URL(ASSEMBLA_URL),
-                String.format("/spaces/%s/%s/merge_requests/%s", mr.getTargetSpaceId(), mr.getSpaceToolId(), mr.getId())
-            ).toString();
-        } catch (MalformedURLException e) {
-            LOGGER.log(Level.SEVERE, "Invalid URL", e);
-        }
-        return url;
+    public User getUser() {
+        return gson.fromJson(apiRequest("user", Method.GET), User.class);
     }
 
-    public MergeRequest getMergeRequest(String spaceName, String toolId, int id) {
-        String requestPath = "spaces/" + spaceName + "/space_tools/" + toolId + "/merge_requests/" + String.valueOf(id);
-        return gson.fromJson(apiRequest(requestPath, Method.GET), MergeRequest.class);
+    public Space getSpace(String spaceName) {
+        String requestPath = String.format("spaces/%s", spaceName);
+
+        return gson.fromJson(apiRequest(requestPath, Method.GET), Space.class);
     }
 
     public SpaceTool getTool(String spaceName, String id) {
-        String requestPath = "spaces/" + spaceName + "/space_tools/" + id;
+        String requestPath = String.format("spaces/%s/space_tools/%s", spaceName, id);
+
         return gson.fromJson(apiRequest(requestPath, Method.GET), SpaceTool.class);
     }
 
@@ -78,6 +70,11 @@ public class AssemblaClient {
         return gson.fromJson(apiRequest(requestPath, Method.GET), listType);
     }
 
+    public MergeRequest getMergeRequest(String spaceName, String toolId, int id) {
+        String requestPath = "spaces/" + spaceName + "/space_tools/" + toolId + "/merge_requests/" + String.valueOf(id);
+        return gson.fromJson(apiRequest(requestPath, Method.GET), MergeRequest.class);
+    }
+
     public List<MergeRequestVersion> getMergeRequestVersions(MergeRequest mr) {
         String requestPath = String.format(
                 "spaces/%s/space_tools/%s/merge_requests/%s/versions",
@@ -88,6 +85,19 @@ public class AssemblaClient {
         Type listType = new TypeToken<ArrayList<MergeRequestVersion>>() {
         }.getType();
         return gson.fromJson(apiRequest(requestPath, Method.GET), listType);
+    }
+
+    public String getMergeRequestWebUrl(MergeRequest mr) {
+        String url = "";
+        try {
+            url = new URL(
+                    new URL(ASSEMBLA_URL),
+                    String.format("/spaces/%s/%s/merge_requests/%s", mr.getTargetSpaceId(), mr.getSpaceToolId(), mr.getId())
+            ).toString();
+        } catch (MalformedURLException e) {
+            LOGGER.log(Level.SEVERE, "Invalid URL", e);
+        }
+        return url;
     }
 
     public List<Ticket> getMergeRequestTickets(MergeRequest mr) {
@@ -213,6 +223,14 @@ public class AssemblaClient {
                 LOGGER.info("Assembla API response: " + responseBody);
             }
 
+            if (statusCode == HttpStatus.SC_NOT_FOUND) {
+                throw new NotFoundError(url, responseBody);
+            } else if (statusCode == HttpStatus.SC_UNAUTHORIZED) {
+                throw new UnauthorizedError();
+            } else if (statusCode == HttpStatus.SC_FORBIDDEN) {
+                throw new ForbiddenError();
+            }
+
         } catch (IOException e) {
             LOGGER.severe("Net for " + url + " failed, server returned: " + method.getStatusLine());
         } finally {
@@ -236,4 +254,26 @@ public class AssemblaClient {
 
         return url;
     }
+
+    public static class NotFoundError extends RuntimeException {
+        private String requestUrl;
+        private String response;
+
+        public NotFoundError(String requestUrl, String response) {
+            this.requestUrl = requestUrl;
+            this.response = response;
+        }
+
+        @Override
+        public String toString() {
+            return "NotFoundError{" +
+                    "requestUrl='" + requestUrl + '\'' +
+                    ", response='" + response + '\'' +
+                    '}';
+        }
+    }
+
+    public static class UnauthorizedError extends RuntimeException {}
+
+    public static class ForbiddenError extends RuntimeException {}
 }

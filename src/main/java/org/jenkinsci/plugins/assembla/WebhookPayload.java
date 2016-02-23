@@ -38,7 +38,19 @@ public class WebhookPayload {
     //    "branch": "assembla-2d6a0afde0",
     //    "commit_id": "2d6a0afde055f27fd0764b5fe525f926b4090360"
     //  }
-
+    //
+    //  {
+    //    "space": "subpro",
+    //    "action": "committed",
+    //    "object": "Changeset",
+    //    "title": "Changeset [2d77b15e83f]: Test",
+    //    "body": "Test\n\nBranch: develop\nCommit from user: pavel.d",
+    //    "author": "pavel.d",
+    //    "repository_suffix": "origin",
+    //    "repository_url": "git@git.assembla.com:subpro.git",
+    //    "branch": "develop",
+    //    "commit_id": "2d77b15e83f"
+    //  }
     public String getRepositoryUrl() {
         return repositoryUrl;
     }
@@ -109,8 +121,12 @@ public class WebhookPayload {
         return object.equals("Merge request");
     }
 
+    public boolean isChangesetEvent() {
+        return object.equals("Changeset");
+    }
+
     public boolean shouldTriggerBuild() {
-        return isMergeRequestEvent() &&  (action.equals("updated") || action.equals("created"));
+        return isChangesetEvent() || (isMergeRequestEvent() && (action.equals("updated") || action.equals("created")));
     }
 
     @Override

@@ -8,25 +8,25 @@ import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequestVersion;
 import org.jenkinsci.plugins.assembla.api.models.Ticket;
+import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Created by pavel on 18/2/16.
  */
-public class AssemblaBuilder {
+public class AssemblaBuildReporter {
     private AssemblaBuildTrigger trigger;
-    private static final Logger LOGGER = Logger.getLogger(AssemblaBuilder.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AssemblaBuildReporter.class.getName());
 
-    public AssemblaBuilder(AssemblaBuildTrigger trigger) {
+    public AssemblaBuildReporter(AssemblaBuildTrigger trigger) {
         this.trigger = trigger;
     }
 
     public void onStarted(AbstractBuild build) {
-        AssemblaCause cause = getCause(build);
+        AssemblaMergeRequestCause cause = getCause(build);
 
         if (cause != null) {
             AssemblaClient client = AssemblaBuildTrigger.getAssembla();
@@ -59,7 +59,7 @@ public class AssemblaBuilder {
     }
 
     public void onCompleted(AbstractBuild build) {
-        AssemblaCause cause = getCause(build);
+        AssemblaMergeRequestCause cause = getCause(build);
         if (cause == null) {
             return;
         }
@@ -108,14 +108,14 @@ public class AssemblaBuilder {
         LOGGER.info("Build result: " + result);
     }
 
-    private AssemblaCause getCause(AbstractBuild build) {
-        Cause cause = build.getCause(AssemblaCause.class);
+    private AssemblaMergeRequestCause getCause(AbstractBuild build) {
+        Cause cause = build.getCause(AssemblaMergeRequestCause.class);
 
-        if (cause == null || !(cause instanceof AssemblaCause)) {
+        if (cause == null || !(cause instanceof AssemblaMergeRequestCause)) {
             return null;
         }
 
-        return (AssemblaCause) cause;
+        return (AssemblaMergeRequestCause) cause;
     }
 
     private String getBuildUrl(AbstractBuild build) {

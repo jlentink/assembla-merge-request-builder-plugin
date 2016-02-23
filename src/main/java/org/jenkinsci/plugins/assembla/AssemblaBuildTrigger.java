@@ -10,6 +10,9 @@ import hudson.util.Secret;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.assembla.api.AssemblaClient;
+import org.jenkinsci.plugins.assembla.api.models.User;
+import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
+import org.jenkinsci.plugins.assembla.cause.AssemblaPushCause;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -28,18 +31,34 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     private final String spaceName;
     private final String repoName;
+
+    private boolean triggerOnMergeRequest;
     private boolean mergeRequestComments;
     private boolean ticketComments;
     private boolean notifyOnStart;
-    private transient AssemblaBuilder builder;
+
+    private boolean triggerOnPush;
+    private String branchesToBuild = "master";
+
+    private transient AssemblaBuildReporter builder;
 
     @DataBoundConstructor
-    public AssemblaBuildTrigger(String spaceName, String repoName, boolean mergeRequestComments, boolean ticketComments, boolean notifyOnStart) {
+    public AssemblaBuildTrigger(String spaceName,
+                                String repoName,
+                                boolean triggerOnMergeRequest,
+                                boolean mergeRequestComments,
+                                boolean ticketComments,
+                                boolean notifyOnStart,
+                                boolean triggerOnPush,
+                                String branchesToBuild) {
         this.spaceName = spaceName;
         this.repoName = repoName;
+        this.triggerOnMergeRequest = triggerOnMergeRequest;
         this.mergeRequestComments = mergeRequestComments;
         this.ticketComments = ticketComments;
         this.notifyOnStart = notifyOnStart;
+        this.triggerOnPush = triggerOnPush;
+        this.branchesToBuild = branchesToBuild;
     }
 
     @Override
@@ -67,14 +86,38 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         super.stop();
     }
 
-    public QueueTaskFuture<?> startJob(AssemblaCause cause) {
+    public QueueTaskFuture<?> handleMergeRequest(AssemblaMergeRequestCause cause) {
+        if (!triggerOnMergeRequest) {
+            return null;
+        }
         Map<String, ParameterValue> values = getDefaultParameters();
 
         values.put("assemblaMergeRequestId", new StringParameterValue("assemblaMergeRequestId", String.valueOf(cause.getMergeRequestId())));
+        values.put("assemblaRefName", new StringParameterValue("assemblaRefName", cause.getCommitId()));
         values.put("assemblaSourceSpaceId", new StringParameterValue("assemblaSourceSpaceId", cause.getSourceSpaceId()));
         values.put("assemblaSourceRepositoryUrl", new StringParameterValue("assemblaSourceRepositoryUrl", cause.getSourceRepositoryUrl()));
         values.put("assemblaSourceBranch", new StringParameterValue("assemblaSourceBranch", cause.getSourceBranch()));
         values.put("assemblaTargetBranch", new StringParameterValue("assemblaTargetBranch", cause.getTargetBranch()));
+        values.put("assemblaDescription", new StringParameterValue("assemblaDescription", cause.getDescription()));
+
+        List<ParameterValue> listValues = new ArrayList<>(values.values());
+        return job.scheduleBuild2(0, cause, new ParametersAction(listValues));
+    }
+
+
+    public QueueTaskFuture<?> handlePush(AssemblaPushCause cause) {
+        List<String> testableBranches = Arrays.asList(branchesToBuild.split(","));
+
+        if (!(triggerOnPush && testableBranches.contains(cause.getSourceBranch()))) {
+            return null;
+        }
+
+        Map<String, ParameterValue> values = getDefaultParameters();
+
+        values.put("assemblaRefName", new StringParameterValue("assemblaRefName", cause.getCommitId()));
+        values.put("assemblaSourceSpaceId", new StringParameterValue("assemblaSourceSpaceId", cause.getSourceSpaceId()));
+        values.put("assemblaSourceRepositoryUrl", new StringParameterValue("assemblaSourceRepositoryUrl", cause.getSourceRepositoryUrl()));
+        values.put("assemblaSourceBranch", new StringParameterValue("assemblaSourceBranch", cause.getSourceBranch()));
         values.put("assemblaDescription", new StringParameterValue("assemblaDescription", cause.getDescription()));
 
         List<ParameterValue> listValues = new ArrayList<>(values.values());
@@ -107,19 +150,11 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return repoName;
     }
 
-    public AssemblaBuilder getBuilder() {
+    public AssemblaBuildReporter getBuilder() {
         if (builder == null) {
-            builder = new AssemblaBuilder(this);
+            builder = new AssemblaBuildReporter(this);
         }
         return builder;
-    }
-
-    public void handleMergeRequest(AssemblaCause cause) {
-        LOGGER.info("Handling merge request");
-        LOGGER.info("Space name: " + spaceName);
-        LOGGER.info("Repo name: " + repoName);
-        LOGGER.info("Job name: " + job.getFullDisplayName());
-        startJob(cause);
     }
 
     public static AssemblaBuildTriggerDescriptor getDesc() {
@@ -127,10 +162,11 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public static AssemblaClient getAssembla() {
-        return new AssemblaClient(
-                DESCRIPTOR.getBotApiKey(),
-                DESCRIPTOR.getBotApiSecret()
-        );
+        return getAssembla(DESCRIPTOR.getBotApiKey(), DESCRIPTOR.getBotApiSecret());
+    }
+
+    public static AssemblaClient getAssembla(String key, String secret) {
+        return new AssemblaClient(key, secret);
     }
 
     public static AssemblaBuildTrigger getTrigger(AbstractProject project) {
@@ -175,7 +211,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
         @Override
         public String getDisplayName() {
-            return "Assembla Merge Requests Builder";
+            return "Assembla Build Triggers";
         }
 
         @Override
@@ -205,6 +241,50 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             }
 
             return FormValidation.ok();
+        }
+
+        public FormValidation doTestCredentials(@QueryParameter("botApiKey") String key, @QueryParameter("botApiSecret") String secret) {
+            User user;
+            try {
+                user = AssemblaBuildTrigger.getAssembla(key, secret).getUser();
+            } catch (AssemblaClient.UnauthorizedError ex) {
+                return FormValidation.error("Invalid credentials");
+            }
+
+            return FormValidation.ok("Successfully logged in as: " + user.getLogin() + " (" + user.getName() + ")");
+        }
+
+
+        public FormValidation doCheckSettings(@QueryParameter("spaceName") String spaceName, @QueryParameter("repoName") String repoName) {
+            if (spaceName == null || spaceName.isEmpty()) {
+                return FormValidation.error("You must provide a space name");
+            }
+
+            if (repoName == null || repoName.isEmpty()) {
+                return FormValidation.error("You must provide a space name");
+            }
+
+            try {
+                getAssembla().getSpace(spaceName);
+            } catch (AssemblaClient.UnauthorizedError ex) {
+                return FormValidation.error("Unable to authenticate. Please check API credentials on Jenkins system configuration page");
+            } catch (AssemblaClient.ForbiddenError ex) {
+                return FormValidation.error("You do not have permissions to access this space. Are you a member?");
+            } catch (AssemblaClient.NotFoundError ex) {
+                return FormValidation.error("Could not find space  " + spaceName);
+            }
+
+            try {
+                getAssembla().getTool(spaceName, repoName);
+            } catch (AssemblaClient.UnauthorizedError ex) {
+                return FormValidation.error("Unable to authenticate. Please check API credentials on Jenkins system configuration page");
+            } catch (AssemblaClient.ForbiddenError ex) {
+                return FormValidation.error("You do not have permissions to access this tool");
+            } catch (AssemblaClient.NotFoundError ex) {
+                return FormValidation.error("Could not find repo with name " + repoName + " in space " + spaceName);
+            }
+
+            return FormValidation.ok("It's all good!");
         }
 
         public String getBotApiKey() {
@@ -271,7 +351,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             projects.remove(project);
         }
 
-        public Set<AbstractProject<?, ?>> getRepoTriggers(String spaceName, String repoName) {
+        public Set<AbstractProject<?, ?>> getRepoJobs(String spaceName, String repoName) {
             Set<AbstractProject<?, ?>> projects = repoJobs.get(getProjectKey(spaceName, repoName));
 
             if (projects == null) {

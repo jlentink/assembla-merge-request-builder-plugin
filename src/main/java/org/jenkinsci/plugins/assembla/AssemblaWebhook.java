@@ -8,12 +8,15 @@ import hudson.model.UnprotectedRootAction;
 import org.apache.commons.io.IOUtils;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
+import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
+import org.jenkinsci.plugins.assembla.cause.AssemblaPushCause;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -47,7 +50,6 @@ public class AssemblaWebhook implements UnprotectedRootAction {
         WebhookPayload payload = gson.fromJson(body, WebhookPayload.class);
 
         if (payload.shouldTriggerBuild()) {
-            LOGGER.info("Merge request ID: " + String.valueOf(payload.getMergeRequestId()));
             SpaceTool tool = AssemblaBuildTrigger
                     .getAssembla()
                     .getRepoByUrl(payload.getSpace(), payload.getRepositoryUrl());
@@ -59,46 +61,43 @@ public class AssemblaWebhook implements UnprotectedRootAction {
                 return;
             }
 
-            MergeRequest mr = AssemblaBuildTrigger.getAssembla()
-                    .getMergeRequest(
-                            payload.getSpace(),
-                            tool.getName(),
-                            payload.getMergeRequestId()
-                    );
-
-            if (mr == null) {
-                LOGGER.info(
-                    "Can not find MR with ID: " + payload.getMergeRequestId() + ", tool: " + tool.getName() + ", space: " + payload.getSpace()
-                );
-                return;
-            }
-
-            LOGGER.info("MR: " + mr.toString());
-
-            LOGGER.info("Space name: " + payload.getSpace() + " Tool name: " + tool.getName());
-
-            for (AbstractProject<?, ?> project : getTriggers(payload.getSpace(), tool.getName())) {
-                AssemblaBuildTrigger trigger = project.getTrigger(AssemblaBuildTrigger.class);
-
-                if (trigger != null) {
-                    LOGGER.info("Trigger is present!");
-                    trigger.handleMergeRequest(new AssemblaCause(
-                        mr.getId(),
-                        payload.getRepositoryUrl(),
-                        tool.getName(),
-                        mr.getSourceSymbol(),
-                        mr.getTargetSymbol(),
-                        payload.getCommitId(),
-                        mr.getDescription(),
-                        mr.getTargetSpaceId(),
-                        mr.getTitle()
-                    ));
-                } else {
-                    LOGGER.info("Trigger is null");
-                }
+            if (payload.isMergeRequestEvent()) {
+                processMergeRequestEvent(payload, tool);
+            } else if (payload.isChangesetEvent()) {
+                processChangesetEvent(payload, tool);
             }
         }
 
+    }
+
+    private void processChangesetEvent(WebhookPayload payload, SpaceTool tool) {
+        AssemblaPushCause cause = AssemblaPushCause.fromChangeset(tool, payload);
+
+        for (AssemblaBuildTrigger trigger : getTriggers(payload.getSpace(), tool.getName())) {
+            trigger.handlePush(cause);
+        }
+    }
+
+    private void processMergeRequestEvent(WebhookPayload payload, SpaceTool tool) {
+        MergeRequest mr = AssemblaBuildTrigger.getAssembla()
+                .getMergeRequest(
+                        payload.getSpace(),
+                        tool.getName(),
+                        payload.getMergeRequestId()
+                );
+
+        if (mr == null) {
+            LOGGER.info(
+                "Can not find MR with ID: " + payload.getMergeRequestId() + ", tool: " + tool.getName() + ", space: " + payload.getSpace()
+            );
+            return;
+        }
+
+        AssemblaMergeRequestCause cause = AssemblaMergeRequestCause.fromMergeRequest(mr, tool, payload);
+
+        for (AssemblaBuildTrigger trigger : getTriggers(payload.getSpace(), tool.getName())) {
+            trigger.handleMergeRequest(cause);
+        }
     }
 
     private String extractRequestBody(StaplerRequest req) {
@@ -115,9 +114,14 @@ public class AssemblaWebhook implements UnprotectedRootAction {
         return body;
     }
 
-    private Set<AbstractProject<?, ?>> getTriggers(String spaceName, String repoName) {
-        Set<AbstractProject<?, ?>> triggers = AssemblaBuildTrigger.getDesc().getRepoTriggers(spaceName, repoName);
-        LOGGER.info("Triggers count: " + triggers.size());
+    private List<AssemblaBuildTrigger> getTriggers(String spaceName, String repoName) {
+        List<AssemblaBuildTrigger> triggers = new ArrayList<>();
+
+        for (AbstractProject project : AssemblaBuildTrigger.getDesc().getRepoJobs(spaceName, repoName)) {
+            AssemblaBuildTrigger trigger = (AssemblaBuildTrigger) project.getTrigger(AssemblaBuildTrigger.class);
+
+            triggers.add(trigger);
+        }
         return triggers;
     }
 }
