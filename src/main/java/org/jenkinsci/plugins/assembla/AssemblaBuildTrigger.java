@@ -38,13 +38,13 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private boolean notifyOnStart;
 
     private boolean triggerOnPush;
+
     private String branchesToBuild = "master";
 
     private transient AssemblaBuildReporter builder;
 
     @DataBoundConstructor
-    public AssemblaBuildTrigger(String spaceName,
-                                String repoName,
+    public AssemblaBuildTrigger(String spaceName, String repoName,
                                 boolean triggerOnMergeRequest,
                                 boolean mergeRequestComments,
                                 boolean ticketComments,
@@ -59,6 +59,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.notifyOnStart = notifyOnStart;
         this.triggerOnPush = triggerOnPush;
         this.branchesToBuild = branchesToBuild;
+
     }
 
     @Override
@@ -79,7 +80,6 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     @Override
     public void stop() {
-        LOGGER.info("Trigger stopped. Repo name: " + repoName);
         if (!StringUtils.isEmpty(repoName)) {
             DESCRIPTOR.removeRepoTrigger(this, super.job);
         }
@@ -106,9 +106,13 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
 
     public QueueTaskFuture<?> handlePush(AssemblaPushCause cause) {
-        List<String> testableBranches = Arrays.asList(branchesToBuild.split(","));
+        List<String> buildableBranches = Arrays.asList(branchesToBuild.split(","));
+        // TODO: Build all branches if empty
+        LOGGER.info(cause.toString());
+        LOGGER.info("Branches to build " + buildableBranches);
 
-        if (!(triggerOnPush && testableBranches.contains(cause.getSourceBranch()))) {
+        if (!(triggerOnPush && buildableBranches.contains(cause.getSourceBranch()))) {
+            LOGGER.info("Nothing to build!");
             return null;
         }
 
@@ -190,12 +194,22 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return notifyOnStart;
     }
 
+    public boolean isTriggerOnMergeRequest() {
+        return triggerOnMergeRequest;
+    }
+
+    public boolean isTriggerOnPush() {
+        return triggerOnPush;
+    }
+
+
+    public String getBranchesToBuild() {
+        return branchesToBuild;
+    }
+
     public static final class AssemblaBuildTriggerDescriptor extends TriggerDescriptor {
         private String botApiKey = "";
         private Secret botApiSecret;
-        private String successMessage = "Build finished.  Tests PASSED.";
-        private String unstableMessage = "Build finished.  Tests FAILED.";
-        private String failureMessage = "Build finished.  Tests FAILED.";
 
         private transient final Map<String, Set<AbstractProject<?, ?>>> repoJobs;
 
@@ -218,9 +232,6 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             botApiKey = formData.getString("botApiKey");
             botApiSecret = Secret.fromString(formData.getString("botApiSecret"));
-            successMessage = formData.getString("successMessage");
-            unstableMessage = formData.getString("unstableMessage");
-            failureMessage = formData.getString("failureMessage");
 
             save();
 
@@ -298,33 +309,9 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             return botApiSecret.getPlainText();
         }
 
-        public String getSuccessMessage() {
-            if (successMessage == null) {
-                successMessage = "Build finished.  Tests PASSED.";
-            }
-            return successMessage;
-        }
-
-        public String getUnstableMessage() {
-            if (unstableMessage == null) {
-                unstableMessage = "Build finished.  Tests FAILED.";
-            }
-            return unstableMessage;
-        }
-
-        public String getFailureMessage() {
-            if (failureMessage == null) {
-                failureMessage = "Build finished.  Tests FAILED.";
-            }
-            return failureMessage;
-        }
-
         public void addRepoTrigger(AssemblaBuildTrigger trigger, AbstractProject<?, ?> project) {
             String projectKey = getProjectKey(trigger);
             if (project == null || StringUtils.isEmpty(projectKey)) {
-                LOGGER.info("Not adding a trigger");
-                LOGGER.info("project is: " + project);
-                LOGGER.info("repo name is: " + projectKey);
                 return;
             }
             LOGGER.info("Adding trigger for repo: " + projectKey);
@@ -369,5 +356,4 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             return spaceName + ":" + repoName;
         }
     }
-
 }

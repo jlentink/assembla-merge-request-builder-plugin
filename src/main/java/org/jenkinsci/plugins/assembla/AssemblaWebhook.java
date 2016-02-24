@@ -71,9 +71,11 @@ public class AssemblaWebhook implements UnprotectedRootAction {
     }
 
     private void processChangesetEvent(WebhookPayload payload, SpaceTool tool) {
+        LOGGER.info("Processing changeset event");
         AssemblaPushCause cause = AssemblaPushCause.fromChangeset(tool, payload);
 
         for (AssemblaBuildTrigger trigger : getTriggers(payload.getSpace(), tool.getName())) {
+            LOGGER.info("Triggering " + trigger.toString());
             trigger.handlePush(cause);
         }
     }

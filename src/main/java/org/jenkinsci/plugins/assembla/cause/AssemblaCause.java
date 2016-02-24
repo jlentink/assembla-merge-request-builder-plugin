@@ -58,4 +58,17 @@ public abstract class AssemblaCause extends Cause {
         this.sourceSpaceId = sourceSpaceId;
         this.title = title;
     }
+
+    @Override
+    public String toString() {
+        return "AssemblaCause{" +
+                "sourceRepositoryUrl='" + sourceRepositoryUrl + '\'' +
+                ", sourceRepositoryName='" + sourceRepositoryName + '\'' +
+                ", sourceBranch='" + sourceBranch + '\'' +
+                ", commitId='" + commitId + '\'' +
+                ", description='" + description + '\'' +
+                ", sourceSpaceId='" + sourceSpaceId + '\'' +
+                ", title='" + title + '\'' +
+                '}';
+    }
 }

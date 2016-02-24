@@ -12,8 +12,8 @@
     <f:validateButton
        title="${%Check settings}" progress="${%Checking...}"
        method="checkSettings" with="spaceName,repoName" />
-    <f:optionalBlock name="triggerOnMergeRequest" title="Build merge requests"
-        description="Trigger build after merge request events">
+    <f:optionalBlock field="triggerOnMergeRequest" title="Build merge requests"
+        description="Trigger build after merge request events" inline="true">
         <f:entry title="Comment after job start" field="notifyOnStart"
           description="Jenkins will leave a ticket or merge request comment when build starts">
           <f:checkbox />
@@ -27,8 +27,8 @@
           <f:checkbox />
         </f:entry>
     </f:optionalBlock>
-    <f:optionalBlock name="triggerOnPush" title="Build on push" description="Build when change is pushed to Assembla" >
-      <f:entry name="branchesToBuild" title="Branches to build" description="List of branches separated by comma. Push into specified branches will trigger the build">
+    <f:optionalBlock field="triggerOnPush" title="Build on push" description="Build when change is pushed to Assembla" inline="true">
+      <f:entry field="branchesToBuild" title="Branches to build" description="List of branches separated by comma. Push into specified branches will trigger the build">
           <f:textbox />
       </f:entry>
     </f:optionalBlock>
