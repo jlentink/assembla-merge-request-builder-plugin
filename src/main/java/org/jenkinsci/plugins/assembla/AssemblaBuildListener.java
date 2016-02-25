@@ -5,11 +5,15 @@ import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
 
+import java.util.logging.Logger;
+
 /**
  * Created by pavel on 18/2/16.
  */
 @Extension
 public class AssemblaBuildListener extends RunListener<AbstractBuild> {
+
+    private static final Logger LOGGER = Logger.getLogger(AssemblaBuildTrigger.class.getName());
 
     @Override
     public void onStarted(AbstractBuild abstractBuild, TaskListener listener) {
@@ -19,8 +23,7 @@ public class AssemblaBuildListener extends RunListener<AbstractBuild> {
             return;
         }
 
-        trigger.getBuilder().onStarted(abstractBuild);
-
+        trigger.getBuilder().onStarted(abstractBuild, listener);
     }
 
     @Override
@@ -31,6 +34,6 @@ public class AssemblaBuildListener extends RunListener<AbstractBuild> {
             return;
         }
 
-        trigger.getBuilder().onCompleted(abstractBuild);
+        trigger.getBuilder().onCompleted(abstractBuild, listener);
     }
 }

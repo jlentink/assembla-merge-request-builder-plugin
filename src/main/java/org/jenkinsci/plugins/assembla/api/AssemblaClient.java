@@ -18,6 +18,7 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.io.IOUtils;
 import org.jenkinsci.plugins.assembla.api.models.*;
 
 /**
@@ -216,10 +217,9 @@ public class AssemblaClient {
                 LOGGER.severe("Request for " + url + " failed, server returned: " + method.getStatusLine());
             }
 
-            byte[] responseBuffer = method.getResponseBody();
+            responseBody = IOUtils.toString(method.getResponseBodyAsStream());
 
-            if (responseBuffer != null) {
-                responseBody = new String(responseBuffer);
+            if (responseBody != null) {
                 LOGGER.info("Assembla API response: " + responseBody);
             }
 

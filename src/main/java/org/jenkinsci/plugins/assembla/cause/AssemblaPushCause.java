@@ -9,13 +9,13 @@ import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
  * Created by pavel on 16/2/16.
  */
 public class AssemblaPushCause extends AssemblaCause {
-    public AssemblaPushCause(String sourceRepositoryUrl, String sourceRepositoryName, String sourceBranch, String commitId, String title, String description, String sourceSpaceId) {
-        super(sourceRepositoryUrl, sourceRepositoryName, sourceBranch, commitId, title, description, sourceSpaceId);
+    public AssemblaPushCause(String sourceRepositoryUrl, String sourceRepositoryName, String sourceBranch, String commitId, String title, String description, String sourceSpaceId, String authorName) {
+        super(sourceRepositoryUrl, sourceRepositoryName, sourceBranch, commitId, title, description, sourceSpaceId, authorName);
     }
 
     @Override
     public String getShortDescription() {
-        return "Assembla " + getTitle() + " - " + getDescription();
+        return "Assembla " + getDescription();
     }
 
     public static AssemblaPushCause fromChangeset(SpaceTool tool, WebhookPayload payload) {
@@ -26,7 +26,8 @@ public class AssemblaPushCause extends AssemblaCause {
                 payload.getCommitId(),
                 payload.getTitle(),
                 payload.getBody(),
-                tool.getSpaceId()
+                tool.getSpaceId(),
+                payload.getAuthor()
         );
     }
 

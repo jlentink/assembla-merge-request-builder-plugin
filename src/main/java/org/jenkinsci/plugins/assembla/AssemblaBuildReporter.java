@@ -1,16 +1,18 @@
 package org.jenkinsci.plugins.assembla;
 
-import hudson.model.AbstractBuild;
-import hudson.model.Cause;
-import hudson.model.Result;
+import hudson.Util;
+import hudson.model.*;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequestVersion;
 import org.jenkinsci.plugins.assembla.api.models.Ticket;
+import org.jenkinsci.plugins.assembla.cause.AssemblaCause;
 import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,7 +27,7 @@ public class AssemblaBuildReporter {
         this.trigger = trigger;
     }
 
-    public void onStarted(AbstractBuild build) {
+    public void onStarted(AbstractBuild build, TaskListener listener) {
         AssemblaMergeRequestCause cause = getCause(build);
 
         if (cause != null) {
@@ -36,29 +38,46 @@ public class AssemblaBuildReporter {
                 cause.getMergeRequestId()
             );
 
-            if (trigger.isNotifyOnStart()) {
-                String message = "Build started, monitor at " + getBuildUrl(build);
+            if (trigger.isNotifyOnStartEnabled()) {
+                String startedMessage = processTemplate(
+                        trigger.getDescriptor().getBuildStartedTemplate(),
+                        build,
+                        listener,
+                        getVariables(cause, build, mr)
+                );
 
-                if (trigger.isTicketComments()) {
+                if (trigger.isTicketCommentsEnabled()) {
                     for (Ticket ticket : client.getMergeRequestTickets(mr)) {
-                        client.createTicketComment(ticket, message);
+                        client.createTicketComment(ticket, startedMessage);
                     }
                 }
 
-                if (trigger.isMergeRequestComments()) {
-                    client.commentMergeRequest(mr, client.getLatestVersion(mr), message);
+                if (trigger.isMergeRequestCommentsEnabled()) {
+                    client.commentMergeRequest(mr, client.getLatestVersion(mr), startedMessage);
                 }
             }
 
             try {
-                build.setDescription(getOnStartedMessage(mr));
+                String description = processTemplate(
+                        trigger.getDescriptor().getBuildDescriptionTemplate(),
+                        build,
+                        listener,
+                        getVariables(cause, build, mr)
+                );
+
+                build.setDescription(description);
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Failed to set build description", e);
             }
         }
     }
 
-    public void onCompleted(AbstractBuild build) {
+    private String processTemplate(String template, AbstractBuild build, TaskListener listener, Map<String,String> vars) {
+        String result = Util.replaceMacro(template, vars);
+        return replaceMacros(build, listener, result);
+    }
+
+    public void onCompleted(AbstractBuild build, TaskListener listener) {
         AssemblaMergeRequestCause cause = getCause(build);
         if (cause == null) {
             return;
@@ -79,15 +98,14 @@ public class AssemblaBuildReporter {
 
         Result result = build.getResult();
 
+        String message = processTemplate(
+                trigger.getDescriptor().getBuildResultTemplate(),
+                build,
+                listener,
+                getVariables(cause, build, mr)
+        );
 
-        String message = new StringBuilder()
-            .append(build.getProject().getDisplayName()).append(" finished with status: ")
-            .append(build.getResult().toString()).append("\n")
-            .append("Source revision: ").append(cause.getCommitId()).append("\n")
-            .append("Build results available at: ").append(getBuildUrl(build)).append("\n")
-            .toString();
-
-        if (trigger.isMergeRequestComments()) {
+        if (trigger.isMergeRequestCommentsEnabled()) {
             MergeRequestVersion mrVersion = client.getLatestVersion(mr);
 
             client.commentMergeRequest(mr, mrVersion, message);
@@ -99,7 +117,7 @@ public class AssemblaBuildReporter {
             }
         }
 
-        if (trigger.isTicketComments()) {
+        if (trigger.isTicketCommentsEnabled()) {
           for (Ticket ticket : client.getMergeRequestTickets(mr)) {
               client.createTicketComment(ticket, message);
           }
@@ -122,9 +140,46 @@ public class AssemblaBuildReporter {
         return Jenkins.getInstance().getRootUrl() + build.getUrl();
     }
 
-    private String getOnStartedMessage(MergeRequest mr) {
-        String mrUrl = AssemblaBuildTrigger.getAssembla().getMergeRequestWebUrl(mr);
-        return "MR <a href=\"" + mrUrl + "\">#" + mr.getId()
-                + "</a> " + " (" + mr.getSourceSymbol() + " => " + mr.getTargetSymbol() + ")";
+    public static Map<String, String> getEnvVars(AbstractBuild<?, ?> build, TaskListener listener) {
+        Map<String, String> messageEnvVars = new HashMap<>();
+        if (build != null) {
+            messageEnvVars.putAll(build.getCharacteristicEnvVars());
+            messageEnvVars.putAll(build.getBuildVariables());
+            try {
+                messageEnvVars.putAll(build.getEnvironment(listener));
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Couldn't get Env Variables: ", e);
+            }
+        }
+        return messageEnvVars;
+    }
+
+    public static String replaceMacros(AbstractBuild<?, ?> build, TaskListener listener, String inputString) {
+        String returnString = inputString;
+        if (build != null && inputString != null) {
+            try {
+                Map<String, String> messageEnvVars = getEnvVars(build, listener);
+
+                returnString = Util.replaceMacro(inputString, messageEnvVars);
+
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Couldn't replace macros in message: ", e);
+            }
+        }
+        return returnString;
+    }
+
+    public Map<String, String> getVariables(AssemblaMergeRequestCause c, AbstractBuild b, MergeRequest mr) {
+        Map<String, String> vars = new HashMap<>();
+        vars.put("mrTitle", c.getTitle());
+        vars.put("mrUrl", AssemblaBuildTrigger.getAssembla().getMergeRequestWebUrl(mr));
+        vars.put("mrId", Integer.toString(c.getMergeRequestId()));
+        vars.put("mrAbbrTitle", c.getAbbreviatedTitle());
+        vars.put("jobName", b.getProject().getDisplayName());
+        vars.put("buildUrl", getBuildUrl(b));
+        if (b.getResult() != null) {
+            vars.put("buildStatus", b.getResult().toString());
+        }
+        return vars;
     }
 }

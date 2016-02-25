@@ -32,34 +32,33 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String spaceName;
     private final String repoName;
 
-    private boolean triggerOnMergeRequest;
-    private boolean mergeRequestComments;
-    private boolean ticketComments;
-    private boolean notifyOnStart;
+    private boolean buildOnMergeRequestEnabled;
+    private boolean mergeRequestCommentsEnabled;
+    private boolean ticketCommentsEnabled;
+    private boolean notifyOnStartEnabled;
 
-    private boolean triggerOnPush;
+    private boolean triggerOnPushEnabled;
 
-    private String branchesToBuild = "master";
+    private String branchesToBuild;
 
     private transient AssemblaBuildReporter builder;
 
     @DataBoundConstructor
     public AssemblaBuildTrigger(String spaceName, String repoName,
-                                boolean triggerOnMergeRequest,
-                                boolean mergeRequestComments,
-                                boolean ticketComments,
-                                boolean notifyOnStart,
-                                boolean triggerOnPush,
+                                boolean buildOnMergeRequestEnabled,
+                                boolean mergeRequestCommentsEnabled,
+                                boolean ticketCommentsEnabled,
+                                boolean notifyOnStartEnabled,
+                                boolean triggerOnPushEnabled,
                                 String branchesToBuild) {
-        this.spaceName = spaceName;
-        this.repoName = repoName;
-        this.triggerOnMergeRequest = triggerOnMergeRequest;
-        this.mergeRequestComments = mergeRequestComments;
-        this.ticketComments = ticketComments;
-        this.notifyOnStart = notifyOnStart;
-        this.triggerOnPush = triggerOnPush;
-        this.branchesToBuild = branchesToBuild;
-
+        this.spaceName = spaceName.trim();
+        this.repoName = repoName.trim();
+        this.buildOnMergeRequestEnabled = buildOnMergeRequestEnabled;
+        this.mergeRequestCommentsEnabled = mergeRequestCommentsEnabled;
+        this.ticketCommentsEnabled = ticketCommentsEnabled;
+        this.notifyOnStartEnabled = notifyOnStartEnabled;
+        this.triggerOnPushEnabled = triggerOnPushEnabled;
+        this.branchesToBuild = branchesToBuild.trim();
     }
 
     @Override
@@ -87,7 +86,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public QueueTaskFuture<?> handleMergeRequest(AssemblaMergeRequestCause cause) {
-        if (!triggerOnMergeRequest) {
+        if (!buildOnMergeRequestEnabled) {
             return null;
         }
         Map<String, ParameterValue> values = getDefaultParameters();
@@ -99,20 +98,16 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         values.put("assemblaSourceBranch", new StringParameterValue("assemblaSourceBranch", cause.getSourceBranch()));
         values.put("assemblaTargetBranch", new StringParameterValue("assemblaTargetBranch", cause.getTargetBranch()));
         values.put("assemblaDescription", new StringParameterValue("assemblaDescription", cause.getDescription()));
+        values.put("assemblaAuthorName", new StringParameterValue("assemblaAuthorName", cause.getAuthorName()));
 
         List<ParameterValue> listValues = new ArrayList<>(values.values());
         return job.scheduleBuild2(0, cause, new ParametersAction(listValues));
     }
 
-
     public QueueTaskFuture<?> handlePush(AssemblaPushCause cause) {
         List<String> buildableBranches = Arrays.asList(branchesToBuild.split(","));
-        // TODO: Build all branches if empty
-        LOGGER.info(cause.toString());
-        LOGGER.info("Branches to build " + buildableBranches);
 
-        if (!(triggerOnPush && buildableBranches.contains(cause.getSourceBranch()))) {
-            LOGGER.info("Nothing to build!");
+        if (!(triggerOnPushEnabled && (buildableBranches.contains(cause.getSourceBranch()) || branchesToBuild.isEmpty()))) {
             return null;
         }
 
@@ -123,6 +118,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         values.put("assemblaSourceRepositoryUrl", new StringParameterValue("assemblaSourceRepositoryUrl", cause.getSourceRepositoryUrl()));
         values.put("assemblaSourceBranch", new StringParameterValue("assemblaSourceBranch", cause.getSourceBranch()));
         values.put("assemblaDescription", new StringParameterValue("assemblaDescription", cause.getDescription()));
+        values.put("assemblaAuthorName", new StringParameterValue("assemblaAuthorName", cause.getAuthorName()));
 
         List<ParameterValue> listValues = new ArrayList<>(values.values());
         return job.scheduleBuild2(0, cause, new ParametersAction(listValues));
@@ -182,26 +178,25 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return (AssemblaBuildTrigger) trigger;
     }
 
-    public boolean isMergeRequestComments() {
-        return mergeRequestComments;
+    public boolean isMergeRequestCommentsEnabled() {
+        return mergeRequestCommentsEnabled;
     }
 
-    public boolean isTicketComments() {
-        return ticketComments;
+    public boolean isTicketCommentsEnabled() {
+        return ticketCommentsEnabled;
     }
 
-    public boolean isNotifyOnStart() {
-        return notifyOnStart;
+    public boolean isNotifyOnStartEnabled() {
+        return notifyOnStartEnabled;
     }
 
-    public boolean isTriggerOnMergeRequest() {
-        return triggerOnMergeRequest;
+    public boolean isBuildOnMergeRequestEnabled() {
+        return buildOnMergeRequestEnabled;
     }
 
-    public boolean isTriggerOnPush() {
-        return triggerOnPush;
+    public boolean isTriggerOnPushEnabled() {
+        return triggerOnPushEnabled;
     }
-
 
     public String getBranchesToBuild() {
         return branchesToBuild;
@@ -210,6 +205,12 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     public static final class AssemblaBuildTriggerDescriptor extends TriggerDescriptor {
         private String botApiKey = "";
         private Secret botApiSecret;
+        // private String skipBuildPhrase = "[skip ci]";
+        private String buildDescriptionTemplate = "MR <a title=\"$mrTitle\" href=\"$mrUrl\">#$mrId</a>: $mrAbbrTitle";;
+        private String buildStartedTemplate = "Build started, monitor at $buildUrl";
+        private String buildResultTemplate  = "$jobName finished with status: $buildStatus\n"
+                                            + "Source revision: $assemblaRefName\n"
+                                            + "Build results available at: $buildUrl\n";
 
         private transient final Map<String, Set<AbstractProject<?, ?>>> repoJobs;
 
@@ -232,6 +233,9 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             botApiKey = formData.getString("botApiKey");
             botApiSecret = Secret.fromString(formData.getString("botApiSecret"));
+            buildDescriptionTemplate = formData.getString("buildDescriptionTemplate");
+            buildResultTemplate = formData.getString("buildResultTemplate");
+            buildStartedTemplate = formData.getString("buildStartedTemplate");
 
             save();
 
@@ -298,17 +302,6 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             return FormValidation.ok("It's all good!");
         }
 
-        public String getBotApiKey() {
-            return botApiKey;
-        }
-
-        public String getBotApiSecret() {
-            if (botApiSecret == null) {
-                return "";
-            }
-            return botApiSecret.getPlainText();
-        }
-
         public void addRepoTrigger(AssemblaBuildTrigger trigger, AbstractProject<?, ?> project) {
             String projectKey = getProjectKey(trigger);
             if (project == null || StringUtils.isEmpty(projectKey)) {
@@ -348,12 +341,39 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             return projects;
         }
 
+        public String getBotApiKey() {
+            return botApiKey;
+        }
+
+        public String getBotApiSecret() {
+            if (botApiSecret == null) {
+                return "";
+            }
+            return botApiSecret.getPlainText();
+        }
+
         private String getProjectKey(AssemblaBuildTrigger trigger) {
             return getProjectKey(trigger.getSpaceName(), trigger.getRepoName());
         }
 
         private String getProjectKey(String spaceName, String repoName) {
             return spaceName + ":" + repoName;
+        }
+
+        public String getBuildDescriptionTemplate() {
+            return buildDescriptionTemplate;
+        }
+
+        public String getSkipBuildPhrase() {
+            return skipBuildPhrase;
+        }
+
+        public String getBuildResultTemplate() {
+            return buildResultTemplate;
+        }
+
+        public String getBuildStartedTemplate() {
+            return buildStartedTemplate;
         }
     }
 }

@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.assembla.cause;
 
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.assembla.WebhookPayload;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
@@ -27,7 +28,8 @@ public class AssemblaMergeRequestCause extends AssemblaCause {
                                      String commitId,
                                      String description,
                                      String sourceSpaceId,
-                                     String title) {
+                                     String title,
+                                     String author) {
         super(
             sourceRepositoryUrl,
             sourceRepositoryName,
@@ -35,12 +37,17 @@ public class AssemblaMergeRequestCause extends AssemblaCause {
             commitId,
             title,
             description,
-            sourceSpaceId
+            sourceSpaceId,
+            author
         );
 
         this.targetBranch = targetBranch;
         this.mergeRequestId = mergeRequestId;
 
+    }
+
+    public String getAbbreviatedTitle() {
+        return StringUtils.abbreviate(getTitle(), 30);
     }
 
     @Override
@@ -59,7 +66,8 @@ public class AssemblaMergeRequestCause extends AssemblaCause {
                 payload.getCommitId(),
                 mr.getDescription(),
                 mr.getTargetSpaceId(),
-                mr.getTitle()
+                mr.getTitle(),
+                payload.getAuthor()
         );
     }
 }

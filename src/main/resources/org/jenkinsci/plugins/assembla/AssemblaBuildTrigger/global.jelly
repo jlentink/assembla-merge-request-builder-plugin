@@ -11,16 +11,16 @@
     <f:validateButton
        title="${%Test credentials}" progress="${%Checking...}"
        method="testCredentials" with="botApiKey,botApiSecret" />
-    <f:entry title="Success message" field="successMessage"
-      description="Message for successful build result">
+    <f:entry title="Build description template" field="buildDescriptionTemplate" help="/plugin/jenkins-assembla-mrbuilder/help-buildTemplateVariables.html"
+      description="Build description. Can be customized with variables.">
       <f:textarea />
     </f:entry>
-    <f:entry title="Unstable message" field="unstableMessage"
-      description="Message for unstable build result">
-      <f:textarea />
+    <f:entry title="Build started message template" field="buildStartedTemplate" help="/plugin/jenkins-assembla-mrbuilder/help-buildTemplateVariables.html"
+     description="Message for build result. Will be used for merge request and ticket comments. Can be customized with variables.">
+     <f:textarea />
     </f:entry>
-    <f:entry title="Failure message" field="failureMessage"
-      description="Message for failed build result">
+    <f:entry title="Build result message template" field="buildResultTemplate" help="/plugin/jenkins-assembla-mrbuilder/help-buildTemplateVariables.html"
+      description="Message for build result. Will be used for merge request and ticket comments. Can be customized with variables.">
       <f:textarea />
     </f:entry>
   </f:section>

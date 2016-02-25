@@ -13,6 +13,7 @@ public abstract class AssemblaCause extends Cause {
     private final String description;
     private final String sourceSpaceId;
     private final String title;
+    private final String authorName;
 
     public String getSourceRepositoryUrl() {
         return sourceRepositoryUrl;
@@ -42,13 +43,18 @@ public abstract class AssemblaCause extends Cause {
         return title;
     }
 
+    public String getAuthorName() {
+        return authorName;
+    }
+
     public AssemblaCause(String sourceRepositoryUrl,
                              String sourceRepositoryName,
                              String sourceBranch,
                              String commitId,
                              String title,
                              String description,
-                             String sourceSpaceId) {
+                             String sourceSpaceId,
+                             String authorName) {
 
         this.sourceRepositoryUrl = sourceRepositoryUrl;
         this.sourceRepositoryName = sourceRepositoryName;
@@ -57,6 +63,7 @@ public abstract class AssemblaCause extends Cause {
         this.description = description;
         this.sourceSpaceId = sourceSpaceId;
         this.title = title;
+        this.authorName = authorName;
     }
 
     @Override

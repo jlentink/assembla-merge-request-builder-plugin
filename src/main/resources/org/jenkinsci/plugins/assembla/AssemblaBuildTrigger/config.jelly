@@ -12,23 +12,25 @@
     <f:validateButton
        title="${%Check settings}" progress="${%Checking...}"
        method="checkSettings" with="spaceName,repoName" />
-    <f:optionalBlock field="triggerOnMergeRequest" title="Build merge requests"
+    <f:optionalBlock field="buildOnMergeRequestEnabled" title="Build merge requests"
         description="Trigger build after merge request events" inline="true">
-        <f:entry title="Comment after job start" field="notifyOnStart"
+        <f:entry title="Comment after job start" field="notifyOnStartEnabled"
           description="Jenkins will leave a ticket or merge request comment when build starts">
           <f:checkbox />
         </f:entry>
-        <f:entry title="Comment and vote merge request" field="mergeRequestComments"
+        <f:entry title="Comment and vote merge request" field="mergeRequestCommentsEnabled"
           description="Jenkins will leave a merge request comment and upvote/downvote it according to build result">
           <f:checkbox />
         </f:entry>
-        <f:entry title="Comment related tickets" field="ticketComments"
+        <f:entry title="Comment related tickets" field="ticketCommentsEnabled"
           description="Jenkins will leave a ticket comment with build result">
           <f:checkbox />
         </f:entry>
     </f:optionalBlock>
-    <f:optionalBlock field="triggerOnPush" title="Build on push" description="Build when change is pushed to Assembla" inline="true">
-      <f:entry field="branchesToBuild" title="Branches to build" description="List of branches separated by comma. Push into specified branches will trigger the build">
+    <f:optionalBlock field="triggerOnPushEnabled" title="Build on push" description="Build when change is pushed to Assembla" inline="true">
+      <f:entry field="branchesToBuild" title="Branches to build"
+        help="/plugin/jenkins-assembla-mrbuilder/help-triggerOnPushEnabled.html"
+        description="List of branches separated by comma, leave empty to build all branches. Push into specified branches will trigger the build">
           <f:textbox />
       </f:entry>
     </f:optionalBlock>
