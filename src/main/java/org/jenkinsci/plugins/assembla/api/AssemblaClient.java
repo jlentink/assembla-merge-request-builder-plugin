@@ -8,35 +8,56 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.gson.reflect.TypeToken;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.jenkinsci.plugins.assembla.api.models.*;
+
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Created by pavel on 16/2/16.
  */
 public class AssemblaClient {
-    private static final String API_ENDPOINT = "https://api.assembla.com/v1/";
-    private static final String ASSEMBLA_URL = "https://assembla.com/";
     private static final Logger LOGGER = Logger.getLogger(AssemblaClient.class.getName());
+    private static final String DEFAULT_API_ENDPOINT = "https://api.assembla.com/";
+    private static final String DEFAULT_ASSEMBLA_URL = "https://www.assembla.com/";
+    private String assemblaHost;
     private String apiKey;
     private String apiSecret;
+    private String apiEndpoint;
+    private boolean ignoreSSLErrors;
 
     private Gson gson;
 
-    public AssemblaClient(String apiKey, String apiSecret) {
+    public AssemblaClient(String apiKey, String apiSecret, String assemblaHost, boolean ignoreSSLErrors) {
         this.apiKey = apiKey;
         this.apiSecret = apiSecret;
+        this.assemblaHost = assemblaHost;
         this.gson = new GsonBuilder().create();
+        this.ignoreSSLErrors = ignoreSSLErrors;
+        this.apiEndpoint = getApiEndpoint();
     }
 
     public User getUser() {
@@ -92,7 +113,7 @@ public class AssemblaClient {
         String url = "";
         try {
             url = new URL(
-                    new URL(ASSEMBLA_URL),
+                    new URL(assemblaHost),
                     String.format("/spaces/%s/%s/merge_requests/%s", mr.getTargetSpaceId(), mr.getSpaceToolId(), mr.getId())
             ).toString();
         } catch (MalformedURLException e) {
@@ -177,25 +198,44 @@ public class AssemblaClient {
         apiRequest(requestPath, Method.POST, gson.toJson(comment));
     }
 
+    public HttpClient getClient() {
+        if (ignoreSSLErrors) {
+            try {
+
+                SSLSocketFactory sf = new SSLSocketFactory(new TrustStrategy() {
+                    @Override
+                    public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                        return true;
+                    }
+                }, new AllowAllHostnameVerifier());
+
+                SchemeRegistry registry = new SchemeRegistry();
+                registry.register(new Scheme("https", 443, sf));
+
+                ClientConnectionManager ccm = new ThreadSafeClientConnManager(registry);
+                return new DefaultHttpClient(ccm);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Failed to initialize HttpClient", e);
+                return new DefaultHttpClient();
+            }
+        }
+
+        return new DefaultHttpClient();
+    }
+
     private String apiRequest(String path, Method requestMethod, Object body) {
         String url = getRequestUrl(path);
-        HttpClient client = new HttpClient();
-        HttpMethodBase method;
+        HttpUriRequest method;
         String responseBody = "";
 
         if (requestMethod == Method.GET) {
-            method = new GetMethod(url);
+            method = new HttpGet(url);
         } else {
-            PostMethod postMethod = new PostMethod(url);
+            HttpPost postMethod = new HttpPost(url);
             if (body != null) {
                 try {
-                    StringRequestEntity requestEntity = new StringRequestEntity(
-                        body.toString(),
-                        "application/json",
-                        "UTF-8"
-                    );
-                    LOGGER.info("Sending payload: " + requestEntity.getContent());
-                    postMethod.setRequestEntity(requestEntity);
+                    LOGGER.info("Sending payload: " + body.toString());
+                    postMethod.setEntity(new StringEntity(body.toString(), "application/json", "UTF-8"));
                 } catch (UnsupportedEncodingException e) {
                     LOGGER.severe("Failed to set request body");
                     LOGGER.severe(e.getMessage());
@@ -204,20 +244,21 @@ public class AssemblaClient {
             method = postMethod;
         }
 
-        method.setRequestHeader("Content-type", "application/json");
-        method.setRequestHeader("X-Api-Key", apiKey);
-        method.setRequestHeader("X-Api-Secret", apiSecret);
+        method.setHeader("Content-type", "application/json");
+        method.setHeader("X-Api-Key", apiKey);
+        method.setHeader("X-Api-Secret", apiSecret);
 
         try {
-            LOGGER.info("Starting " + method.getName() + " " + url + " request to Assembla API");
+            LOGGER.info("Starting " + method.getMethod() + " " + url + " request to Assembla API");
 
-            int statusCode = client.executeMethod(method);
+            HttpResponse response = getClient().execute(method);
+            int statusCode = response.getStatusLine().getStatusCode();
 
             if (!(statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED || statusCode == HttpStatus.SC_NO_CONTENT)) {
-                LOGGER.severe("Request for " + url + " failed, server returned: " + method.getStatusLine());
+                LOGGER.severe("Request for " + url + " failed, server returned: " + response.getStatusLine());
             }
 
-            responseBody = IOUtils.toString(method.getResponseBodyAsStream());
+            responseBody = IOUtils.toString(response.getEntity().getContent());
 
             if (responseBody != null) {
                 LOGGER.info("Assembla API response: " + responseBody);
@@ -232,9 +273,7 @@ public class AssemblaClient {
             }
 
         } catch (IOException e) {
-            LOGGER.severe("Net for " + url + " failed, server returned: " + method.getStatusLine());
-        } finally {
-            method.releaseConnection();
+            LOGGER.log(Level.SEVERE, "Network failure", e);
         }
 
         return responseBody;
@@ -245,14 +284,17 @@ public class AssemblaClient {
     }
 
     private String getRequestUrl(String path) {
-        String url = null;
-        try {
-            url = new URL(new URL(API_ENDPOINT), path).toString();
-        } catch (MalformedURLException e) {
-            LOGGER.severe("Invalid URL: " + e.toString());
-        }
+        return mergeUrl(apiEndpoint, path);
+    }
 
-        return url;
+    private String getApiEndpoint() {
+        String endpoint;
+        if (assemblaHost == null || assemblaHost.contains(DEFAULT_ASSEMBLA_URL)) {
+            endpoint = DEFAULT_API_ENDPOINT;
+        } else {
+            endpoint = assemblaHost;
+        }
+        return mergeUrl(endpoint, "/v1/");
     }
 
     public static class NotFoundError extends RuntimeException {
@@ -273,7 +315,29 @@ public class AssemblaClient {
         }
     }
 
+    private String mergeUrl(String baseUrl, String relativeUrl) {
+        try {
+            return new URL(new URL(baseUrl), relativeUrl).toString();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static class UnauthorizedError extends RuntimeException {}
 
     public static class ForbiddenError extends RuntimeException {}
+
+    private static class AllowEverythingTrustManager implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+    }
 }

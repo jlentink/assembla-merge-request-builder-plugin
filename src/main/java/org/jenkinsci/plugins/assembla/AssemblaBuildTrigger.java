@@ -10,6 +10,8 @@ import hudson.util.Secret;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.assembla.api.AssemblaClient;
+import org.jenkinsci.plugins.assembla.api.models.Space;
+import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
 import org.jenkinsci.plugins.assembla.api.models.User;
 import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
 import org.jenkinsci.plugins.assembla.cause.AssemblaPushCause;
@@ -19,6 +21,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -162,11 +165,16 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public static AssemblaClient getAssembla() {
-        return getAssembla(DESCRIPTOR.getBotApiKey(), DESCRIPTOR.getBotApiSecret());
+        return getAssembla(
+                DESCRIPTOR.getBotApiKey(),
+                DESCRIPTOR.getBotApiSecret(),
+                DESCRIPTOR.getAssemblaHost(),
+                DESCRIPTOR.isIgnoreSSLErrors()
+        );
     }
 
-    public static AssemblaClient getAssembla(String key, String secret) {
-        return new AssemblaClient(key, secret);
+    public static AssemblaClient getAssembla(String key, String secret, String assemblaHost, boolean ignoreSSL) {
+        return new AssemblaClient(key, secret, assemblaHost, ignoreSSL);
     }
 
     public static AssemblaBuildTrigger getTrigger(AbstractProject project) {
@@ -203,6 +211,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public static final class AssemblaBuildTriggerDescriptor extends TriggerDescriptor {
+        private String assemblaHost = "https://www.assembla.com";
         private String botApiKey = "";
         private Secret botApiSecret;
         private String skipBuildPhrase = "[skip ci]";
@@ -211,6 +220,8 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         private String buildResultTemplate  = "$jobName finished with status: $buildStatus\n"
                                             + "Source revision: $assemblaRefName\n"
                                             + "Build results available at: $buildUrl\n";
+
+        private boolean ignoreSSLErrors;
 
         private transient final Map<String, Set<AbstractProject<?, ?>>> repoJobs;
 
@@ -236,6 +247,8 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             buildDescriptionTemplate = formData.getString("buildDescriptionTemplate");
             buildResultTemplate = formData.getString("buildResultTemplate");
             buildStartedTemplate = formData.getString("buildStartedTemplate");
+            assemblaHost = formData.getString("assemblaHost");
+            ignoreSSLErrors = formData.getBoolean("ignoreSSLErrors");
 
             save();
 
@@ -258,12 +271,22 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             return FormValidation.ok();
         }
 
-        public FormValidation doTestCredentials(@QueryParameter("botApiKey") String key, @QueryParameter("botApiSecret") String secret) {
+        public FormValidation doTestCredentials(@QueryParameter("botApiKey") String key,
+                                                @QueryParameter("botApiSecret") String secret,
+                                                @QueryParameter("ignoreSSLErrors") boolean ignoreSSLErrors,
+                                                @QueryParameter("assemblaHost") String assemblaHost) {
             User user;
             try {
-                user = AssemblaBuildTrigger.getAssembla(key, secret).getUser();
+                user = AssemblaBuildTrigger.getAssembla(key, secret, assemblaHost, ignoreSSLErrors).getUser();
             } catch (AssemblaClient.UnauthorizedError ex) {
                 return FormValidation.error("Invalid credentials");
+            } catch (RuntimeException ex) {
+                LOGGER.log(Level.SEVERE, "Failed to check credentials", ex);
+                return FormValidation.error("Could not connect to Assembla API: " + ex.toString());
+            }
+
+            if (user == null) {
+                return FormValidation.error("Could not perform test request to Assembla API");
             }
 
             return FormValidation.ok("Successfully logged in as: " + user.getLogin() + " (" + user.getName() + ")");
@@ -279,8 +302,9 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
                 return FormValidation.error("You must provide a space name");
             }
 
+            Space space;
             try {
-                getAssembla().getSpace(spaceName);
+                space = getAssembla().getSpace(spaceName);
             } catch (AssemblaClient.UnauthorizedError ex) {
                 return FormValidation.error("Unable to authenticate. Please check API credentials on Jenkins system configuration page");
             } catch (AssemblaClient.ForbiddenError ex) {
@@ -288,15 +312,23 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             } catch (AssemblaClient.NotFoundError ex) {
                 return FormValidation.error("Could not find space  " + spaceName);
             }
+            if (space == null) {
+                return FormValidation.error("Failed to fetch tool. Please check your connection settings");
+            }
 
+            SpaceTool spaceTool;
             try {
-                getAssembla().getTool(spaceName, repoName);
+                spaceTool = getAssembla().getTool(spaceName, repoName);
             } catch (AssemblaClient.UnauthorizedError ex) {
                 return FormValidation.error("Unable to authenticate. Please check API credentials on Jenkins system configuration page");
             } catch (AssemblaClient.ForbiddenError ex) {
                 return FormValidation.error("You do not have permissions to access this tool");
             } catch (AssemblaClient.NotFoundError ex) {
                 return FormValidation.error("Could not find repo with name " + repoName + " in space " + spaceName);
+            }
+
+            if (spaceTool == null) {
+                return FormValidation.error("Failed to fetch space tool. Please check your connection settings");
             }
 
             return FormValidation.ok("It's all good!");
@@ -374,6 +406,14 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
         public String getBuildStartedTemplate() {
             return buildStartedTemplate;
+        }
+
+        public String getAssemblaHost() {
+            return assemblaHost;
+        }
+
+        public boolean isIgnoreSSLErrors() {
+            return ignoreSSLErrors;
         }
     }
 }

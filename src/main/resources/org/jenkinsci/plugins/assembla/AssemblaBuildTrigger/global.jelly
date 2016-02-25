@@ -1,5 +1,13 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:section title="Assembla Merge Request Builder">
+    <f:entry title="Assembla host" field="assemblaHost"
+    description="Default is https://www.assembla.com/. You do not need to change it unless you are using Private Install">
+      <f:textbox />
+    </f:entry>
+    <f:entry title="Ignore SSL Errors" field="ignoreSSLErrors"
+    description="Ignore SSL errors if you are using self-signed certificate. You do not need to change it unless you are using Private Install">
+      <f:checkbox />
+    </f:entry>
     <f:entry title="User API key" field="botApiKey"
       description="API key for jenkins user">
       <f:textbox />
@@ -10,7 +18,7 @@
     </f:entry>
     <f:validateButton
        title="${%Test credentials}" progress="${%Checking...}"
-       method="testCredentials" with="botApiKey,botApiSecret" />
+       method="testCredentials" with="assemblaHost,ignoreSSLErrors,botApiKey,botApiSecret" />
     <f:entry title="Build description template" field="buildDescriptionTemplate" help="/plugin/jenkins-assembla-mrbuilder/help-buildTemplateVariables.html"
       description="Build description. Can be customized with variables.">
       <f:textarea />
