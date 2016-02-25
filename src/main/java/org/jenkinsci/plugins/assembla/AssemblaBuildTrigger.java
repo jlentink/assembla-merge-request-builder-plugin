@@ -205,7 +205,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     public static final class AssemblaBuildTriggerDescriptor extends TriggerDescriptor {
         private String botApiKey = "";
         private Secret botApiSecret;
-        // private String skipBuildPhrase = "[skip ci]";
+        private String skipBuildPhrase = "[skip ci]";
         private String buildDescriptionTemplate = "MR <a title=\"$mrTitle\" href=\"$mrUrl\">#$mrId</a>: $mrAbbrTitle";;
         private String buildStartedTemplate = "Build started, monitor at $buildUrl";
         private String buildResultTemplate  = "$jobName finished with status: $buildStatus\n"
