@@ -49,7 +49,7 @@ public class AssemblaWebhook implements UnprotectedRootAction {
         Gson gson = new GsonBuilder().create();
         WebhookPayload payload = gson.fromJson(body, WebhookPayload.class);
 
-        if (payload.shouldTriggerBuild()) {
+        if (payload != null && payload.shouldTriggerBuild()) {
             SpaceTool tool = AssemblaBuildTrigger
                     .getAssembla()
                     .getRepoByUrl(payload.getSpace(), payload.getRepositoryUrl());
