@@ -20,8 +20,12 @@
       <artifactId>gson</artifactId>
       <version>2.6.1</version>
     </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>assembla-auth</artifactId>
+      <version>1.07-SNAPSHOT</version>
+    </dependency>
   </dependencies>
-
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
@@ -71,13 +75,4 @@
       <url>http://repo.jenkins-ci.org/public/</url>
     </pluginRepository>
   </pluginRepositories>
-  <dependencies>
-    <dependency>
-      <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>assembla-auth</artifactId>
-      <version>1.07-SNAPSHOT</version>
-    </dependency>
-  </dependencies>
-
-
 </project>
