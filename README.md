@@ -31,7 +31,7 @@ request and related tickets indicating whether the merge request was successful.
 
 ## Webhooks
 * Make sure that you have webhook installed and you have a git repository in your space. If no, go to Admin -> Tools -> More -> Webhook section and click "Add" button
-* Set Assembla webhook to trigger you jenkins server. Go to https://www.assembla.com/spaces/<your_space_name>/webhooks. Create new webhook, select "Assembla Jenkins plugin" from template (Make sure "Code comments" and "Code commits" is checked in Post updates about section).
+* Set Assembla webhook to trigger you jenkins server. Go to https://www.assembla.com/spaces/`your_space_name`/webhooks. Create new webhook, select "Assembla Jenkins plugin" from template (Make sure "Code comments" and "Code commits" is checked in Post updates about section).
 
 ## Creating a Job
 
