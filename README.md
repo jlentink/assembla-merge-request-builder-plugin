@@ -57,16 +57,34 @@ request and related tickets indicating whether the merge request was successful.
 You can trigger a job a manually by clicking ``This build is parameterized`` and adding the relevant build parameters.
 These include:
 
-$assemblaRefName - build git revision
-$assemblaSourceSpaceId - assembla space id
-$assemblaDescription - merge request description
-$assemblaSourceRepositoryUrl - assembla repository url
-$assemblaTargetBranch - merge request target branch
-$assemblaSourceBranch - merge request source branch
-$assemblaMergeRequestId - assembla merge request id
+* $assemblaRefName - build git revision
+* $assemblaSourceRepositoryUrl - assembla repository url
+* $assemblaTargetBranch - merge request target branch
+* $assemblaSourceBranch - merge request source branch
 
 __Note:__  a manually triggered build will not add build triggered/succeeded/failed comments to the merge request.
 __Note:__  You should ensure that the 'Global Config user.name Value' and 'Global Config user.email Value' are both set for your git plugin.  In some cases, you will get an error indicating that a branch cannot be merged if these are not set.
+
+## Message templates
+
+Plugin allows to customize build messages using templates (``Manage Jenkins`` -> ``Configure System`` -> ``Assembla Merge Request Builder``). 
+You can use any env variables or build parameters in templates. For example, you can mention your QA team to test changes
+or mention merge request author about build result etc. Additionally plugin provides:
+
+* `$mrTitle` - merge request title
+* `$mrAbbrTitle` - merge request title truncated to 30 chars
+* `$mrUrl` - merge request url
+* `$mrId` - merge request id
+* `$jobName` - jenkins job name
+* `$buildStatus` - build status (available only if build is completed)
+* `$buildUrl` - build url
+* `$assemblaSourceSpaceId` - assembla space id
+* `$assemblaDescription` - merge request description
+* `$assemblaSourceRepositoryUrl` - assembla repository url
+* `$assemblaTargetBranch` - merge request target branch
+* `$assemblaSourceBranch` - merge request source branch
+* `$assemblaMergeRequestId` - assembla merge request id
+* `$assemblaRefName` - build git revision
 
 ## Contributing
 
