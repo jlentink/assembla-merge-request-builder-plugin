@@ -10,6 +10,7 @@ request and related tickets indicating whether the merge request was successful.
 
 * Whilst there is no explicit dependency on the [Git plugin](https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin),
   it's strongly recommended that you install it since Jenkins will be unable to fetch the source code for your project.
+* It's also recommended to install [Assembla Auth plugin](https://wiki.jenkins-ci.org/display/JENKINS/Assembla+Auth+Plugin)
 
 ## Installation
 
