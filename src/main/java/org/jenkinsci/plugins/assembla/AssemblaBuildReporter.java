@@ -72,11 +72,6 @@ public class AssemblaBuildReporter {
         }
     }
 
-    private String processTemplate(String template, AbstractBuild build, TaskListener listener, Map<String,String> vars) {
-        String result = Util.replaceMacro(template, vars);
-        return replaceMacros(build, listener, result);
-    }
-
     public void onCompleted(AbstractBuild build, TaskListener listener) {
         AssemblaMergeRequestCause cause = getCause(build);
         if (cause == null) {
@@ -140,7 +135,7 @@ public class AssemblaBuildReporter {
         return Jenkins.getInstance().getRootUrl() + build.getUrl();
     }
 
-    public static Map<String, String> getEnvVars(AbstractBuild<?, ?> build, TaskListener listener) {
+    private static Map<String, String> getEnvVars(AbstractBuild<?, ?> build, TaskListener listener) {
         Map<String, String> messageEnvVars = new HashMap<>();
         if (build != null) {
             messageEnvVars.putAll(build.getCharacteristicEnvVars());
@@ -154,7 +149,7 @@ public class AssemblaBuildReporter {
         return messageEnvVars;
     }
 
-    public static String replaceMacros(AbstractBuild<?, ?> build, TaskListener listener, String inputString) {
+    private static String replaceMacros(AbstractBuild<?, ?> build, TaskListener listener, String inputString) {
         String returnString = inputString;
         if (build != null && inputString != null) {
             try {
@@ -169,7 +164,7 @@ public class AssemblaBuildReporter {
         return returnString;
     }
 
-    public Map<String, String> getVariables(AssemblaMergeRequestCause c, AbstractBuild b, MergeRequest mr) {
+    private Map<String, String> getVariables(AssemblaMergeRequestCause c, AbstractBuild b, MergeRequest mr) {
         Map<String, String> vars = new HashMap<>();
         vars.put("mrTitle", c.getTitle());
         vars.put("mrUrl", AssemblaBuildTrigger.getAssembla().getMergeRequestWebUrl(mr));
@@ -181,5 +176,10 @@ public class AssemblaBuildReporter {
             vars.put("buildStatus", b.getResult().toString());
         }
         return vars;
+    }
+
+    private String processTemplate(String template, AbstractBuild build, TaskListener listener, Map<String,String> vars) {
+        String result = Util.replaceMacro(template, vars);
+        return replaceMacros(build, listener, result);
     }
 }

@@ -8,6 +8,9 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -19,22 +22,23 @@ import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.*;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.jenkinsci.plugins.assembla.api.models.*;
 
-import javax.net.ssl.X509TrustManager;
+import javax.net.SocketFactory;
+import javax.net.ssl.*;
 
 /**
  * Created by pavel on 16/2/16.
@@ -198,29 +202,62 @@ public class AssemblaClient {
         apiRequest(requestPath, Method.POST, gson.toJson(comment));
     }
 
-    public HttpClient getClient() {
+    public CloseableHttpClient getClient() {
+        HttpClientBuilder clientBuilder = HttpClientBuilder.create();
+
+        // We will create a custom SSL context which will accept everything. Otherwise we'll use the default one.
         if (ignoreSSLErrors) {
             try {
-
-                SSLSocketFactory sf = new SSLSocketFactory(new TrustStrategy() {
+                SSLContextBuilder builder = SSLContexts.custom();
+                builder.loadTrustMaterial(null, new TrustStrategy() {
                     @Override
-                    public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                    public boolean isTrusted(X509Certificate[] chain, String authType)
+                            throws CertificateException {
                         return true;
                     }
-                }, new AllowAllHostnameVerifier());
+                });
 
-                SchemeRegistry registry = new SchemeRegistry();
-                registry.register(new Scheme("https", 443, sf));
+                SSLContext sslContext = builder.build();
 
-                ClientConnectionManager ccm = new ThreadSafeClientConnManager(registry);
-                return new DefaultHttpClient(ccm);
-            } catch (Exception e) {
+                SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                        sslContext, new X509HostnameVerifier() {
+                    @Override
+                    public void verify(String host, SSLSocket ssl)
+                            throws IOException {
+                    }
+
+                    @Override
+                    public void verify(String host, X509Certificate cert)
+                            throws SSLException {
+                    }
+
+                    @Override
+                    public void verify(String host, String[] cns,
+                                       String[] subjectAlts) throws SSLException {
+                    }
+
+                    @Override
+                    public boolean verify(String s, SSLSession sslSession) {
+                        return true;
+                    }
+                });
+
+                Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder
+                        .<ConnectionSocketFactory> create()
+                        .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                        .register("https", sslsf)
+                        .build();
+
+                PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+                clientBuilder.setConnectionManager(cm);
+
+            } catch (KeyStoreException | KeyManagementException | NoSuchAlgorithmException e) {
                 LOGGER.log(Level.SEVERE, "Failed to initialize HttpClient", e);
-                return new DefaultHttpClient();
             }
         }
 
-        return new DefaultHttpClient();
+
+        return clientBuilder.build();
     }
 
     private String apiRequest(String path, Method requestMethod, Object body) {
@@ -233,13 +270,8 @@ public class AssemblaClient {
         } else {
             HttpPost postMethod = new HttpPost(url);
             if (body != null) {
-                try {
-                    LOGGER.info("Sending payload: " + body.toString());
-                    postMethod.setEntity(new StringEntity(body.toString(), "application/json", "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    LOGGER.severe("Failed to set request body");
-                    LOGGER.severe(e.getMessage());
-                }
+                LOGGER.info("Sending payload: " + body.toString());
+                postMethod.setEntity(new StringEntity(body.toString(), ContentType.APPLICATION_JSON));
             }
             method = postMethod;
         }
@@ -248,10 +280,11 @@ public class AssemblaClient {
         method.setHeader("X-Api-Key", apiKey);
         method.setHeader("X-Api-Secret", apiSecret);
 
-        try {
+        try (CloseableHttpClient client = getClient()) {
             LOGGER.info("Starting " + method.getMethod() + " " + url + " request to Assembla API");
 
-            HttpResponse response = getClient().execute(method);
+
+            HttpResponse response = client.execute(method);
             int statusCode = response.getStatusLine().getStatusCode();
 
             if (!(statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED || statusCode == HttpStatus.SC_NO_CONTENT)) {
@@ -297,7 +330,17 @@ public class AssemblaClient {
         return mergeUrl(endpoint, "/v1/");
     }
 
-    public static class NotFoundError extends RuntimeException {
+    private String mergeUrl(String baseUrl, String relativeUrl) {
+        try {
+            return new URL(new URL(baseUrl), relativeUrl).toString();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static class AssemblaApiException extends RuntimeException {}
+
+    public static class NotFoundError extends AssemblaApiException {
         private String requestUrl;
         private String response;
 
@@ -315,29 +358,7 @@ public class AssemblaClient {
         }
     }
 
-    private String mergeUrl(String baseUrl, String relativeUrl) {
-        try {
-            return new URL(new URL(baseUrl), relativeUrl).toString();
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    public static class UnauthorizedError extends AssemblaApiException {}
 
-    public static class UnauthorizedError extends RuntimeException {}
-
-    public static class ForbiddenError extends RuntimeException {}
-
-    private static class AllowEverythingTrustManager implements X509TrustManager {
-
-        @Override
-        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return null;
-        }
-    }
+    public static class ForbiddenError extends AssemblaApiException {}
 }

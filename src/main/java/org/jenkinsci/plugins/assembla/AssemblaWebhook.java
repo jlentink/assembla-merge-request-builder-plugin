@@ -6,6 +6,7 @@ import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.UnprotectedRootAction;
 import org.apache.commons.io.IOUtils;
+import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
 import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -52,22 +54,27 @@ public class AssemblaWebhook implements UnprotectedRootAction {
         WebhookPayload payload = gson.fromJson(body, WebhookPayload.class);
 
         if (payload != null && payload.shouldTriggerBuild()) {
-            SpaceTool tool = AssemblaBuildTrigger
-                    .getAssembla()
-                    .getRepoByUrl(payload.getSpace(), payload.getRepositoryUrl());
+            try {
+                SpaceTool tool = AssemblaBuildTrigger
+                        .getAssembla()
+                        .getRepoByUrl(payload.getSpace(), payload.getRepositoryUrl());
 
-            if (tool == null) {
-                LOGGER.info(
-                    "Can not find tool with url: " + payload.getRepositoryUrl() + ", space: " + payload.getSpace()
-                );
-                return;
+                if (tool == null) {
+                    LOGGER.info(
+                        "Can not find tool with url: " + payload.getRepositoryUrl() + ", space: " + payload.getSpace()
+                    );
+                    return;
+                }
+
+                if (payload.isMergeRequestEvent()) {
+                    processMergeRequestEvent(payload, tool);
+                } else if (payload.isChangesetEvent()) {
+                    processChangesetEvent(payload, tool);
+                }
+            } catch (AssemblaClient.AssemblaApiException ex) {
+                LOGGER.log(Level.SEVERE, "Assembla API request failed", ex);
             }
 
-            if (payload.isMergeRequestEvent()) {
-                processMergeRequestEvent(payload, tool);
-            } else if (payload.isChangesetEvent()) {
-                processChangesetEvent(payload, tool);
-            }
         }
 
     }
