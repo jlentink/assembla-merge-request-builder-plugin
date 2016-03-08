@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 @Extension
 public class AssemblaBuildListener extends RunListener<AbstractBuild> {
 
-    private static final Logger LOGGER = Logger.getLogger(AssemblaBuildTrigger.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AssemblaBuildListener.class.getName());
 
     @Override
     public void onStarted(AbstractBuild abstractBuild, TaskListener listener) {
@@ -23,7 +23,7 @@ public class AssemblaBuildListener extends RunListener<AbstractBuild> {
             return;
         }
 
-        trigger.getBuilder().onStarted(abstractBuild, listener);
+        trigger.getBuildReporter().onStarted(abstractBuild, listener);
     }
 
     @Override
@@ -34,6 +34,6 @@ public class AssemblaBuildListener extends RunListener<AbstractBuild> {
             return;
         }
 
-        trigger.getBuilder().onCompleted(abstractBuild, listener);
+        trigger.getBuildReporter().onCompleted(abstractBuild, listener);
     }
 }

@@ -1,7 +1,9 @@
 package org.jenkinsci.plugins.assembla;
 
 import com.google.gson.annotations.SerializedName;
+import org.apache.tools.ant.util.regexp.Regexp;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,7 +12,8 @@ import java.util.regex.Pattern;
  * Created by pavel on 16/2/16.
  */
 public class WebhookPayload {
-    private static final Pattern mergeRequestIdPattern = Pattern.compile("(\\d+)");
+    private static final Pattern mergeRequestIdPattern = Pattern.compile("Merge Request (\\d+)");
+    private static final Pattern wikiNamePattern = Pattern.compile("^git@git\\.assembla\\.com:([a-z0-9\\_-]+).*$", Pattern.CASE_INSENSITIVE);
     private static final Logger LOGGER = Logger.getLogger(WebhookPayload.class.getName());
 
     private String space;
@@ -67,8 +70,25 @@ public class WebhookPayload {
         this.commitId = commitId;
     }
 
-    public String getSpace() {
+    public String getSpaceName() {
         return space;
+    }
+
+    public String getSpaceWikiName() {
+        Matcher m = wikiNamePattern.matcher(repositoryUrl);
+        String wikiName = "";
+
+        try {
+            if (m.matches()) {
+                LOGGER.info(m.group(1));
+                wikiName = m.group(1);
+            }
+
+        } catch (IllegalStateException | NumberFormatException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to parse space wiki name", ex);
+        }
+
+        return wikiName;
     }
 
     public String getAction() {
@@ -105,13 +125,11 @@ public class WebhookPayload {
 
         try {
             if (m.find()) {
-                mergeRequestId = Integer.parseInt(m.group());
+                mergeRequestId = Integer.parseInt(m.group(1));
             }
 
         } catch (IllegalStateException | NumberFormatException ex) {
-            LOGGER.info("Payload title: " + title);
-            LOGGER.severe("Failed to parse merge request ID");
-            LOGGER.severe(ex.toString());
+            LOGGER.log(Level.SEVERE, "Failed to parse merge request ID", ex);
         }
 
         return mergeRequestId;

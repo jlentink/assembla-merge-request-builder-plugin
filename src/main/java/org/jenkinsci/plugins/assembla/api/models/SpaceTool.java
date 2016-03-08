@@ -23,6 +23,10 @@ public class SpaceTool {
     private String menuName;
     private String name;
 
+    private int watcherPermissions;
+    private int teamPermissions;
+    private int publicPermissions;
+
     private Date createdAt;
 
     public int getPublicPermissions() {
@@ -80,8 +84,4 @@ public class SpaceTool {
     public String getId() {
         return id;
     }
-
-    private int watcherPermissions;
-    private int teamPermissions;
-    private int publicPermissions;
 }

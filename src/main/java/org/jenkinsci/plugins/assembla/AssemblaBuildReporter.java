@@ -1,13 +1,15 @@
 package org.jenkinsci.plugins.assembla;
 
 import hudson.Util;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.Cause;
+import hudson.model.Result;
+import hudson.model.TaskListener;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.jenkinsci.plugins.assembla.api.models.MergeRequestVersion;
 import org.jenkinsci.plugins.assembla.api.models.Ticket;
-import org.jenkinsci.plugins.assembla.cause.AssemblaCause;
 import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
 
 import java.io.IOException;

@@ -1,7 +1,5 @@
 package org.jenkinsci.plugins.assembla.cause;
 
-import hudson.model.Cause;
-import org.jenkinsci.plugins.assembla.AssemblaBuildTrigger;
 import org.jenkinsci.plugins.assembla.WebhookPayload;
 import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
 

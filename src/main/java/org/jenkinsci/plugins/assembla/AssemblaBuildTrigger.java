@@ -13,6 +13,7 @@ import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 import org.jenkinsci.plugins.assembla.api.models.Space;
 import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
 import org.jenkinsci.plugins.assembla.api.models.User;
+import org.jenkinsci.plugins.assembla.cause.AssemblaCause;
 import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
 import org.jenkinsci.plugins.assembla.cause.AssemblaPushCause;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -31,6 +32,12 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     @Extension
     public static final AssemblaBuildTriggerDescriptor DESCRIPTOR = new AssemblaBuildTriggerDescriptor();
     private static final Logger LOGGER = Logger.getLogger(AssemblaBuildTrigger.class.getName());
+    private static AssemblaClient assemblaClient =  getAssembla(
+            DESCRIPTOR.getBotApiKey(),
+            DESCRIPTOR.getBotApiSecret(),
+            DESCRIPTOR.getAssemblaHost(),
+            DESCRIPTOR.isIgnoreSSLErrors()
+    );
 
     private final String spaceName;
     private final String repoName;
@@ -44,7 +51,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     private String branchesToBuild;
 
-    private transient AssemblaBuildReporter builder;
+    private transient AssemblaBuildReporter buildReporter;
 
     @DataBoundConstructor
     public AssemblaBuildTrigger(String spaceName, String repoName,
@@ -70,14 +77,13 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
         String name = project.getFullName();
 
-        LOGGER.info("Trigger started for " + project.toString() + ". Repo name: " + repoName);
-
         if (project.isDisabled()) {
             LOGGER.info("Project is disabled, not starting trigger for job " + name);
             return;
         }
 
         DESCRIPTOR.addRepoTrigger(this, super.job);
+        LOGGER.info("Trigger started for " + project.toString() + ". Repo name: " + repoName);
     }
 
     @Override
@@ -92,16 +98,12 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         if (!buildOnMergeRequestEnabled) {
             return null;
         }
-        Map<String, ParameterValue> values = getDefaultParameters();
+        Map<String, ParameterValue> values = getDefaultParameters(cause);
 
         values.put("assemblaMergeRequestId", new StringParameterValue("assemblaMergeRequestId", String.valueOf(cause.getMergeRequestId())));
-        values.put("assemblaRefName", new StringParameterValue("assemblaRefName", cause.getCommitId()));
-        values.put("assemblaSourceSpaceId", new StringParameterValue("assemblaSourceSpaceId", cause.getSourceSpaceId()));
-        values.put("assemblaSourceRepositoryUrl", new StringParameterValue("assemblaSourceRepositoryUrl", cause.getSourceRepositoryUrl()));
-        values.put("assemblaSourceBranch", new StringParameterValue("assemblaSourceBranch", cause.getSourceBranch()));
+        values.put("assemblaSourceRepositoryName", new StringParameterValue("assemblaSourceRepositoryName", cause.getSourceRepositoryName()));
+        values.put("assemblaTargetRepositoryUrl", new StringParameterValue("assemblaTargetRepositoryUrl", cause.getTargetRepositoryUrl()));
         values.put("assemblaTargetBranch", new StringParameterValue("assemblaTargetBranch", cause.getTargetBranch()));
-        values.put("assemblaDescription", new StringParameterValue("assemblaDescription", cause.getDescription()));
-        values.put("assemblaAuthorName", new StringParameterValue("assemblaAuthorName", cause.getAuthorName()));
 
         List<ParameterValue> listValues = new ArrayList<>(values.values());
         return job.scheduleBuild2(0, cause, new ParametersAction(listValues));
@@ -110,24 +112,17 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     public QueueTaskFuture<?> handlePush(AssemblaPushCause cause) {
         List<String> buildableBranches = Arrays.asList(branchesToBuild.split(","));
 
-        if (!(triggerOnPushEnabled && (buildableBranches.contains(cause.getSourceBranch()) || branchesToBuild.isEmpty()))) {
-            return null;
+        if (triggerOnPushEnabled && (buildableBranches.contains(cause.getSourceBranch()) || branchesToBuild.isEmpty())) {
+            Map<String, ParameterValue> values = getDefaultParameters(cause);
+
+            List<ParameterValue> listValues = new ArrayList<>(values.values());
+            return job.scheduleBuild2(0, cause, new ParametersAction(listValues));
         }
 
-        Map<String, ParameterValue> values = getDefaultParameters();
-
-        values.put("assemblaRefName", new StringParameterValue("assemblaRefName", cause.getCommitId()));
-        values.put("assemblaSourceSpaceId", new StringParameterValue("assemblaSourceSpaceId", cause.getSourceSpaceId()));
-        values.put("assemblaSourceRepositoryUrl", new StringParameterValue("assemblaSourceRepositoryUrl", cause.getSourceRepositoryUrl()));
-        values.put("assemblaSourceBranch", new StringParameterValue("assemblaSourceBranch", cause.getSourceBranch()));
-        values.put("assemblaDescription", new StringParameterValue("assemblaDescription", cause.getDescription()));
-        values.put("assemblaAuthorName", new StringParameterValue("assemblaAuthorName", cause.getAuthorName()));
-
-        List<ParameterValue> listValues = new ArrayList<>(values.values());
-        return job.scheduleBuild2(0, cause, new ParametersAction(listValues));
+        return null;
     }
 
-    private Map<String, ParameterValue> getDefaultParameters() {
+    private Map<String, ParameterValue> getDefaultParameters(AssemblaCause cause) {
         Map<String, ParameterValue> values = new HashMap<>();
         ParametersDefinitionProperty definitionProperty = job.getProperty(ParametersDefinitionProperty.class);
 
@@ -136,6 +131,13 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
                 values.put(definition.getName(), definition.getDefaultParameterValue());
             }
         }
+
+        values.put("assemblaRefName", new StringParameterValue("assemblaRefName", cause.getCommitId()));
+        values.put("assemblaSourceSpaceId", new StringParameterValue("assemblaSourceSpaceId", cause.getSourceSpaceId()));
+        values.put("assemblaSourceRepositoryUrl", new StringParameterValue("assemblaSourceRepositoryUrl", cause.getSourceRepositoryUrl()));
+        values.put("assemblaSourceBranch", new StringParameterValue("assemblaSourceBranch", cause.getSourceBranch()));
+        values.put("assemblaDescription", new StringParameterValue("assemblaDescription", cause.getDescription()));
+        values.put("assemblaAuthorName", new StringParameterValue("assemblaAuthorName", cause.getAuthorName()));
 
         return values;
     }
@@ -153,24 +155,28 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return repoName;
     }
 
-    public AssemblaBuildReporter getBuilder() {
-        if (builder == null) {
-            builder = new AssemblaBuildReporter(this);
+    public AssemblaBuildReporter getBuildReporter() {
+        if (buildReporter == null) {
+            buildReporter = new AssemblaBuildReporter(this);
         }
-        return builder;
+        return buildReporter;
     }
+
+    public void setBuildReporter(AssemblaBuildReporter reporter) {
+        this.buildReporter = reporter;
+    }
+
 
     public static AssemblaBuildTriggerDescriptor getDesc() {
         return DESCRIPTOR;
     }
 
     public static AssemblaClient getAssembla() {
-        return getAssembla(
-                DESCRIPTOR.getBotApiKey(),
-                DESCRIPTOR.getBotApiSecret(),
-                DESCRIPTOR.getAssemblaHost(),
-                DESCRIPTOR.isIgnoreSSLErrors()
-        );
+        return assemblaClient;
+    }
+
+    public static AssemblaClient setAssembla(AssemblaClient client) {
+        return assemblaClient = client;
     }
 
     public static AssemblaClient getAssembla(String key, String secret, String assemblaHost, boolean ignoreSSL) {
@@ -313,7 +319,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
                 return FormValidation.error("Could not find space  " + spaceName);
             }
             if (space == null) {
-                return FormValidation.error("Failed to fetch tool. Please check your connection settings");
+                return FormValidation.error("Failed to fetch space. Please check your connection settings");
             }
 
             SpaceTool spaceTool;

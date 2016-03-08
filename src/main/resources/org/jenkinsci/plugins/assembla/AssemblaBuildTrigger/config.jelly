@@ -27,10 +27,12 @@
           <f:checkbox />
         </f:entry>
     </f:optionalBlock>
-    <f:optionalBlock field="triggerOnPushEnabled" title="Build on push" description="Build when change is pushed to Assembla" inline="true">
+    <f:optionalBlock field="triggerOnPushEnabled" title="Build on push"
+      description="Build when change is pushed to Assembla additionally to merge request trigger"
+      inline="true">
       <f:entry field="branchesToBuild" title="Branches to build"
         help="/plugin/jenkins-assembla-mrbuilder/help-triggerOnPushEnabled.html"
-        description="List of branches separated by comma, leave empty to build all branches. Push into specified branches will trigger the build">
+        description="List of branches separated by comma, leave empty to build all branches. Push into specified branches will trigger the build. For example you can specify master to trigger the build against master branch after you merge a merge request.">
           <f:textbox />
       </f:entry>
     </f:optionalBlock>

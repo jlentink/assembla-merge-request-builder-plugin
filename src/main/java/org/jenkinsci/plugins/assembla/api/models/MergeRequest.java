@@ -1,10 +1,8 @@
 package org.jenkinsci.plugins.assembla.api.models;
 
 import com.google.gson.annotations.SerializedName;
-import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * Created by pavel on 16/2/16.

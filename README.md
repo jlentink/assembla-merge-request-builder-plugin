@@ -31,21 +31,22 @@ request and related tickets indicating whether the merge request was successful.
 * Go to `Manage Jenkins` -> `Configure Global Security` and set `Markup Formatter` to *Safe HTML*. It will make Jenkins display links in build history properly.
 
 ## Webhooks
-* Make sure that you have webhook installed and you have a git repository in your space. If no, go to Admin -> Tools -> More -> Webhook section and click "Add" button
-* Set Assembla webhook to trigger you jenkins server. Go to https://www.assembla.com/spaces/`your_space_name`/webhooks. Create new webhook, select "Assembla Jenkins plugin" from template (Make sure "Code comments" and "Code commits" is checked in Post updates about section).
+* Make sure that you have Webhook Tool installed and you have a git repository in your space. If no, go to Admin -> Tools -> More -> Webhook section and click "Add" button.
+* Set Assembla webhook to trigger your Jenkins server. Go to https://www.assembla.com/spaces/`your_space_name`/webhooks. Create new webhook, select "Assembla Jenkins plugin" from template (Make sure "Code comments" and "Code commits" are checked in `Post updates about` section).
 
 ## Creating a Job
 
 * Create a new job by going to ``New Job``
 * Set the ``Project Name``
 * In the ``Source Code Management`` section:
-    * Click ``Git`` and enter your Repository URL and in Advanced set its Name to ``origin``
-    * For merge requests from forked repositories add another repository with Repository URL ``${assemblaSourceRepository}``.
-    * In ``Branch Specifier`` enter ``${assemblaRefName}``
+    * Click ``Git``, enter your Repository URL and in Advanced set its Name to ``origin``
+    * For merge requests from forked repositories, add another repository with Repository URL ``${assemblaSourceRepositoryUrl}``.
+    * In ``Branch to build`` enter ``${assemblaSourceRepositoryName}/${assemblaSourceBranch}``
     * You configure jenkins to merge source with target branch before build. In the ``Additional Behaviours`` section:
         * Click the ``Add`` drop down button and the ``Merge before build`` item
-        * Specify the name of the repository as ``origin`` (if origin corresponds to Assembla) and enter the
+        * Specify the name of the repository as ``origin`` and enter the
           ``Branch to merge to`` as ``${assemblaTargetBranch}``
+        * NOTE: ``${assemblaTargetBranch}`` parameter is not available when using "Push trigger"
         * **Ensure ``Prune stale remote-tracking branches`` is not added**
 * In the ``Build Triggers`` section:
     * Check the ``Assembla Triggers``
@@ -58,7 +59,6 @@ request and related tickets indicating whether the merge request was successful.
 You can trigger a job a manually by clicking ``This build is parameterized`` and adding the relevant build parameters.
 These include:
 
-* $assemblaRefName - build git revision
 * $assemblaSourceRepositoryUrl - assembla repository url
 * $assemblaTargetBranch - merge request target branch
 * $assemblaSourceBranch - merge request source branch
@@ -100,4 +100,4 @@ or mention merge request author about build result etc. Additionally plugin prov
 
 ## Copyright
 
-Copyright (c) 2016 Pavel Dotsulenko. See LICENSE for further details.
+Copyright (c) 2016 Assembla Inc. See LICENSE for further details.

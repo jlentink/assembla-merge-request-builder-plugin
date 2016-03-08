@@ -2,22 +2,6 @@ package org.jenkinsci.plugins.assembla.api;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Type;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -37,8 +21,23 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.jenkinsci.plugins.assembla.api.models.*;
 
-import javax.net.SocketFactory;
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by pavel on 16/2/16.
@@ -320,7 +319,7 @@ public class AssemblaClient {
         return mergeUrl(apiEndpoint, path);
     }
 
-    private String getApiEndpoint() {
+    public String getApiEndpoint() {
         String endpoint;
         if (assemblaHost == null || assemblaHost.contains(DEFAULT_ASSEMBLA_URL)) {
             endpoint = DEFAULT_API_ENDPOINT;
