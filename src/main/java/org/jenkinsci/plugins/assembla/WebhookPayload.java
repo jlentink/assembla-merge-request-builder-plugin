@@ -1,7 +1,6 @@
 package org.jenkinsci.plugins.assembla;
 
 import com.google.gson.annotations.SerializedName;
-import org.apache.tools.ant.util.regexp.Regexp;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

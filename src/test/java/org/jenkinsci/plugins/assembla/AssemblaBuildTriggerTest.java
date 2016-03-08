@@ -1,6 +1,5 @@
 package org.jenkinsci.plugins.assembla;
 
-import com.google.common.collect.Lists;
 import hudson.model.AbstractProject;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParametersAction;
@@ -8,15 +7,11 @@ import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
 import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
 import org.jenkinsci.plugins.assembla.cause.AssemblaPushCause;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.kohsuke.stapler.StaplerRequest;
 
-import java.io.BufferedReader;
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.*;

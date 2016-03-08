@@ -65,7 +65,7 @@
     <version>1.580.1</version>
     <relativePath/>
   </parent>
-  <!--<groupId>org.jenkinsci.plugins.assembla</groupId>-->
+
   <artifactId>assembla-mrbuilder</artifactId>
   <version>1.03-SNAPSHOT</version>
   <packaging>hpi</packaging>

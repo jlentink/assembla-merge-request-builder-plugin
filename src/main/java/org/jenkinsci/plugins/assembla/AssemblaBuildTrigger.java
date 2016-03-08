@@ -175,8 +175,8 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         return assemblaClient;
     }
 
-    public static AssemblaClient setAssembla(AssemblaClient client) {
-        return assemblaClient = client;
+    public static void setAssembla(AssemblaClient client) {
+        assemblaClient = client;
     }
 
     public static AssemblaClient getAssembla(String key, String secret, String assemblaHost, boolean ignoreSSL) {
