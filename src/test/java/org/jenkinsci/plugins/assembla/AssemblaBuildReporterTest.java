@@ -53,6 +53,7 @@ public class AssemblaBuildReporterTest {
         given(build.getCause(any(Class.class))).willReturn(AssemblaTestUtil.getMergeRequestCause());
         given(build.getProject()).willReturn(project);
 
+        given(client.setConfig(anyString(), anyString(), anyString(), anyBoolean())).willCallRealMethod();
         given(client.getMergeRequest(anyString(), anyString(), anyInt())).willReturn(mr);
         given(client.getLatestVersion(any(MergeRequest.class))).willReturn(mrVersion);
         given(client.getMergeRequestTickets(any(MergeRequest.class))).willReturn(Arrays.asList(ticket));

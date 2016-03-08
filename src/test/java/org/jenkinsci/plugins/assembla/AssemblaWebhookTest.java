@@ -5,10 +5,8 @@ import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
 import org.junit.*;
 
 import static org.junit.Assert.*;
-import org.junit.runner.RunWith;
-import org.jvnet.hudson.test.JenkinsRule;
+
 import org.kohsuke.stapler.StaplerRequest;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -19,6 +17,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.verify;
 import static org.mockito.BDDMockito.times;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,6 +37,7 @@ public class AssemblaWebhookTest {
     @Before
     public void setUp() throws Exception {
         webhook = spy(new AssemblaWebhook());
+        given(client.setConfig(anyString(), anyString(), anyString(), anyBoolean())).willCallRealMethod();
         given(client.getRepoByUrl(anyString(), anyString())).willReturn(mock(SpaceTool.class));
     }
 

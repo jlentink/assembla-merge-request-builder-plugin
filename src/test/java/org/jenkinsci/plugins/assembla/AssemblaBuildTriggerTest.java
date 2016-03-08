@@ -42,6 +42,7 @@ public class AssemblaBuildTriggerTest {
         webhook = spy(new AssemblaWebhook());
         AssemblaBuildTrigger.setAssembla(client);
 
+        given(client.setConfig(anyString(), anyString(), anyString(), anyBoolean())).willCallRealMethod();
         given(client.getRepoByUrl(anyString(), anyString())).willReturn(mock(SpaceTool.class));
     }
 

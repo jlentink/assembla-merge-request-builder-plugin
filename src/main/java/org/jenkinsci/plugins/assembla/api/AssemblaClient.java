@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
@@ -60,7 +61,7 @@ public class AssemblaClient {
         this.assemblaHost = assemblaHost;
         this.gson = new GsonBuilder().create();
         this.ignoreSSLErrors = ignoreSSLErrors;
-        this.apiEndpoint = getApiEndpoint();
+        this.apiEndpoint = getApiEndpoint(assemblaHost);
     }
 
     public User getUser() {
@@ -201,7 +202,16 @@ public class AssemblaClient {
         apiRequest(requestPath, Method.POST, gson.toJson(comment));
     }
 
-    public CloseableHttpClient getClient() {
+    public AssemblaClient setConfig(String apiKey, String apiSecret, String assemblaHost, boolean ignoreSSLErrors) {
+        this.apiKey = apiKey;
+        this.apiSecret = apiSecret;
+        this.assemblaHost = assemblaHost;
+        this.ignoreSSLErrors = ignoreSSLErrors;
+        this.apiEndpoint = getApiEndpoint(assemblaHost);
+        return this;
+    }
+
+    private CloseableHttpClient getClient() {
         HttpClientBuilder clientBuilder = HttpClientBuilder.create();
 
         // We will create a custom SSL context which will accept everything. Otherwise we'll use the default one.
@@ -290,9 +300,10 @@ public class AssemblaClient {
                 LOGGER.severe("Request for " + url + " failed, server returned: " + response.getStatusLine());
             }
 
-            responseBody = IOUtils.toString(response.getEntity().getContent());
+            HttpEntity httpEntity = response.getEntity();
 
-            if (responseBody != null) {
+            if (httpEntity != null) {
+                responseBody = IOUtils.toString(httpEntity.getContent());
                 LOGGER.info("Assembla API response: " + responseBody);
             }
 
@@ -319,9 +330,9 @@ public class AssemblaClient {
         return mergeUrl(apiEndpoint, path);
     }
 
-    public String getApiEndpoint() {
+    private String getApiEndpoint(String assemblaHost) {
         String endpoint;
-        if (assemblaHost == null || assemblaHost.contains(DEFAULT_ASSEMBLA_URL)) {
+        if (assemblaHost == null || DEFAULT_ASSEMBLA_URL.equals(assemblaHost)) {
             endpoint = DEFAULT_API_ENDPOINT;
         } else {
             endpoint = assemblaHost;

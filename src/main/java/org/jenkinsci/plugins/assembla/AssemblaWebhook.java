@@ -77,7 +77,6 @@ public class AssemblaWebhook implements UnprotectedRootAction {
         AssemblaPushCause cause = AssemblaPushCause.fromChangeset(sourceRepo, payload);
 
         for (AssemblaBuildTrigger trigger : getTriggers(payload.getSpaceWikiName(), sourceRepo.getName())) {
-            LOGGER.info("Triggering " + trigger.toString());
             trigger.handlePush(cause);
         }
     }

@@ -32,11 +32,11 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     @Extension
     public static final AssemblaBuildTriggerDescriptor DESCRIPTOR = new AssemblaBuildTriggerDescriptor();
     private static final Logger LOGGER = Logger.getLogger(AssemblaBuildTrigger.class.getName());
-    private static AssemblaClient assemblaClient =  getAssembla(
-            DESCRIPTOR.getBotApiKey(),
-            DESCRIPTOR.getBotApiSecret(),
-            DESCRIPTOR.getAssemblaHost(),
-            DESCRIPTOR.isIgnoreSSLErrors()
+    private static AssemblaClient assemblaClient =  new AssemblaClient(
+        DESCRIPTOR.getBotApiKey(),
+        DESCRIPTOR.getBotApiSecret(),
+        DESCRIPTOR.getAssemblaHost(),
+        DESCRIPTOR.isIgnoreSSLErrors()
     );
 
     private final String spaceName;
@@ -172,15 +172,16 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public static AssemblaClient getAssembla() {
-        return assemblaClient;
+        return assemblaClient.setConfig(
+            getDesc().getBotApiKey(),
+            getDesc().getBotApiSecret(),
+            getDesc().getAssemblaHost(),
+            getDesc().isIgnoreSSLErrors()
+        );
     }
 
     public static void setAssembla(AssemblaClient client) {
         assemblaClient = client;
-    }
-
-    public static AssemblaClient getAssembla(String key, String secret, String assemblaHost, boolean ignoreSSL) {
-        return new AssemblaClient(key, secret, assemblaHost, ignoreSSL);
     }
 
     public static AssemblaBuildTrigger getTrigger(AbstractProject project) {
@@ -217,7 +218,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public static final class AssemblaBuildTriggerDescriptor extends TriggerDescriptor {
-        private String assemblaHost = "https://www.assembla.com";
+        private String assemblaHost = "https://www.assembla.com/";
         private String botApiKey = "";
         private Secret botApiSecret;
         private String skipBuildPhrase = "[skip ci]";
@@ -283,7 +284,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
                                                 @QueryParameter("assemblaHost") String assemblaHost) {
             User user;
             try {
-                user = AssemblaBuildTrigger.getAssembla(key, secret, assemblaHost, ignoreSSLErrors).getUser();
+                user = new AssemblaClient(key, secret, assemblaHost, ignoreSSLErrors).getUser();
             } catch (AssemblaClient.UnauthorizedError ex) {
                 return FormValidation.error("Invalid credentials");
             } catch (RuntimeException ex) {

@@ -32,6 +32,7 @@ request and related tickets indicating whether the merge request was successful.
 
 ## Webhooks
 * Make sure that you have Webhook Tool installed and you have a git repository in your space. If no, go to Admin -> Tools -> More -> Webhook section and click "Add" button.
+* You need to configure the Webhook Tool only once per each space.
 * Set Assembla webhook to trigger your Jenkins server. Go to https://www.assembla.com/spaces/`your_space_name`/webhooks. Create new webhook, select "Assembla Jenkins plugin" from template (Make sure "Code comments" and "Code commits" are checked in `Post updates about` section).
 
 ## Creating a Job
@@ -40,12 +41,11 @@ request and related tickets indicating whether the merge request was successful.
 * Set the ``Project Name``
 * In the ``Source Code Management`` section:
     * Click ``Git``, enter your Repository URL and in Advanced set its Name to ``origin``
-    * For merge requests from forked repositories, add another repository with Repository URL ``${assemblaSourceRepositoryUrl}``.
     * In ``Branch to build`` enter ``${assemblaSourceRepositoryName}/${assemblaSourceBranch}``
-    * You configure jenkins to merge source with target branch before build. In the ``Additional Behaviours`` section:
+    * OPTIONAL: For merge requests from forked repositories, add another repository with Repository URL ``${assemblaSourceRepositoryUrl}`` and name ``${assemblaSourceRepositoryName}``.
+    * OPTIONAL: You can configure jenkins to merge source with target branch before build. In the ``Additional Behaviours`` section:
         * Click the ``Add`` drop down button and the ``Merge before build`` item
-        * Specify the name of the repository as ``origin`` and enter the
-          ``Branch to merge to`` as ``${assemblaTargetBranch}``
+        * Specify the name of the repository as ``origin`` and enter the ``Branch to merge to`` as ``${assemblaTargetBranch}``
         * NOTE: ``${assemblaTargetBranch}`` parameter is not available when using "Push trigger"
         * **Ensure ``Prune stale remote-tracking branches`` is not added**
 * In the ``Build Triggers`` section:

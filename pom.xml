@@ -67,7 +67,7 @@
   </parent>
 
   <artifactId>assembla-mrbuilder</artifactId>
-  <version>1.03-SNAPSHOT</version>
+  <version>1.04-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Assembla merge request builder</name>
@@ -81,7 +81,7 @@
   </licenses>
   <developers>
     <developer>
-      <id>pavel.d</id>
+      <id>paveld</id>
       <name>Pavel Dotsulenko</name>
       <email>pavel@assembla.com</email>
     </developer>
