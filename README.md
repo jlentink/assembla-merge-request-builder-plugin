@@ -16,7 +16,7 @@ request and related tickets indicating whether the merge request was successful.
 
 * Ensure that a Jenkins user exists within your Assembla space, has access to the repository and has permissions to leave comments. Ensure that the user
   has **Member** level access to the project.
-* Install the plugin in Jenkins. `Only manual installation for now. TODO: Fix readme after release`
+* Install the plugin in Jenkins.
     * The plugin is hosted on the [Jenkins Plugin repository](https://wiki.jenkins-ci.org/display/JENKINS/Assembla+Merge+Request+Builder+Plugin) 
     * Go to ``Jenkins`` -> ``Manage Plugins`` -> ``Available``
     * Search for ``Assembla Merge Request Builder``
