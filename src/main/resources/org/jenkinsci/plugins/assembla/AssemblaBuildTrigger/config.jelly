@@ -1,11 +1,11 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:section title="Assembla Build Trigger">
-    <f:entry title="Space name" field="spaceName"  help="/plugin/jenkins-assembla-mrbuilder/help-spaceConfig.html"
+    <f:entry title="Space name" field="spaceName"  help="/plugin/assembla-merge-request-builder/help-spaceConfig.html"
       description="Assembla space name">
       <f:textbox />
     </f:entry>
-    <f:entry title="Repository name" field="repoName" help="/plugin/jenkins-assembla-mrbuilder/help-repoConfig.html"
+    <f:entry title="Repository name" field="repoName" help="/plugin/assembla-merge-request-builder/help-repoConfig.html"
       description="Assembla repository name">
       <f:textbox />
     </f:entry>
@@ -31,7 +31,7 @@
       description="Build when change is pushed to Assembla additionally to merge request trigger"
       inline="true">
       <f:entry field="branchesToBuild" title="Branches to build"
-        help="/plugin/jenkins-assembla-mrbuilder/help-triggerOnPushEnabled.html"
+        help="/plugin/assembla-merge-request-builder/help-triggerOnPushEnabled.html"
         description="List of branches separated by comma, leave empty to build all branches. Push into specified branches will trigger the build. For example you can specify master to trigger the build against master branch after you merge a merge request.">
           <f:textbox />
       </f:entry>

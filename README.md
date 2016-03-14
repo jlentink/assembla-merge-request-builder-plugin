@@ -8,11 +8,9 @@ request and related tickets indicating whether the merge request was successful.
 
 This plugin is not using template jobs.
 
-## Prerequisites
+## Required Jenkins Plugins
 
-* Whilst there is no explicit dependency on the [Git plugin](https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin),
-  it's strongly recommended that you install it since Jenkins will be unable to fetch the source code for your project.
-* It's also recommended to install [Assembla Auth plugin](https://wiki.jenkins-ci.org/display/JENKINS/Assembla+Auth+Plugin)
+* git plugin (https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin)
 
 ## Installation
 
@@ -66,6 +64,7 @@ These include:
 * $assemblaSourceBranch - merge request source branch
 
 __Note:__  a manually triggered build will not add build triggered/succeeded/failed comments to the merge request.
+
 __Note:__  You should ensure that the 'Global Config user.name Value' and 'Global Config user.email Value' are both set for your git plugin.  In some cases, you will get an error indicating that a branch cannot be merged if these are not set.
 
 ## Message templates

@@ -27,6 +27,11 @@
     </plugins>
   </build>
   <dependencies>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>git</artifactId>
+      <version>2.2.4</version>
+    </dependency>
     <!-- JMockit's dependency must be declared before that of JUnit. -->
     <dependency>
       <groupId>org.jmockit</groupId>
@@ -66,8 +71,8 @@
     <relativePath/>
   </parent>
 
-  <artifactId>assembla-mrbuilder</artifactId>
-  <version>1.04-SNAPSHOT</version>
+  <artifactId>assembla-merge-request-builder</artifactId>
+  <version>1.05-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Assembla merge request builder</name>
