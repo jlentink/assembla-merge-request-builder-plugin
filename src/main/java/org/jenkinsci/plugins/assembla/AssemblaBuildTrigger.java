@@ -396,7 +396,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         }
 
         private String getProjectKey(String spaceName, String repoName) {
-            return spaceName + ":" + repoName;
+            return (spaceName + ":" + repoName).toLowerCase();
         }
 
         public String getBuildDescriptionTemplate() {
