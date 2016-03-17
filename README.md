@@ -31,9 +31,10 @@ This plugin is not using template jobs.
 * Go to `Manage Jenkins` -> `Configure Global Security` and set `Markup Formatter` to *Safe HTML*. It will make Jenkins display links in build history properly.
 
 ## Webhooks
-* Make sure that you have Webhook Tool installed and you have a git repository in your space. If no, go to Admin -> Tools -> More -> Webhook section and click "Add" button.
+* Make sure that you have Webhook Tool installed and you have a git repository in your space already. If no, go to Admin -> Tools -> More -> Webhook section and click "Add" button.
+* Set Assembla webhook to trigger your Jenkins server. Go to https://www.assembla.com/spaces/{your_space_name}/webhooks. Create new webhook, select "Assembla Jenkins plugin" from template, change your Jenkins server URL (Make sure "Code comments" and "Code commits" are checked in `Post updates about` section).
 * You need to configure the Webhook Tool only once per each space.
-* Set Assembla webhook to trigger your Jenkins server. Go to https://www.assembla.com/spaces/`your_space_name`/webhooks. Create new webhook, select "Assembla Jenkins plugin" from template, change your Jenkins server URL (Make sure "Code comments" and "Code commits" are checked in `Post updates about` section).
+* If you are using Jenkins server behind a firewall you need to add IP range of our servers to your whitelist, please contact Support for this information.
 
 ## Creating a Job
 
@@ -41,15 +42,20 @@ This plugin is not using template jobs.
 * Set the ``Project Name``
 * In the ``Source Code Management`` section:
     * Click ``Git``, enter your Repository URL and in Advanced set its Name to ``origin``
-    * In ``Branch to build`` enter ``${assemblaSourceRepositoryName}/${assemblaSourceBranch}``
-    * OPTIONAL: For merge requests from forked repositories, add another repository with Repository URL ``${assemblaSourceRepositoryUrl}`` and name ``${assemblaSourceRepositoryName}``.
+    * In ``Branches to build`` enter ``${assemblaSourceRepositoryName}/${assemblaSourceBranch}``
+    * OPTIONAL: For merge requests from forked repositories, change ``Branches to build`` field to ``${assemblaSourceRepositoryName}/${assemblaSourceBranch}`` and add another repository with Repository URL ``${assemblaSourceRepositoryUrl}`` and name ``${assemblaSourceRepositoryName}``.
     * OPTIONAL: You can configure jenkins to merge source with target branch before build. In the ``Additional Behaviours`` section:
         * Click the ``Add`` drop down button and the ``Merge before build`` item
         * Specify the name of the repository as ``origin`` and enter the ``Branch to merge to`` as ``${assemblaTargetBranch}``
         * NOTE: ``${assemblaTargetBranch}`` parameter is not available when using "Push trigger"
         * **Ensure ``Prune stale remote-tracking branches`` is not added**
 * In the ``Build Triggers`` section:
-    * Check the ``Assembla Triggers``
+    * Check the ``Assembla Triggers`` checkbox
+    * Check the Assembla Triggers checkbox and Assembla Merge Request Builder configuration section will appear.
+    * Enter Space name and Repository name and click Check settings button. (For example: If your code browser url is https://www.assembla.com/spaces/pavel-test/git/source, space name will be pavel-test and repo name - git.
+    * Check Comment and vote merge request to allow Jenkins to post a comment about build result and upvote/downvote merge request
+    * If you want to be notified when Jenkins starts the build, check Comment after job start checkbox. Jenkins will post a comment to a merge request and related tickets (if Comment related tickets checkbox is checked).
+
     
 * Configure any other pre build, build or post build actions as necessary
 * ``Save`` to preserve your changes

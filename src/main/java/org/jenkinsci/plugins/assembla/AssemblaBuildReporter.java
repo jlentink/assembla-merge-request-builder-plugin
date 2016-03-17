@@ -42,7 +42,7 @@ public class AssemblaBuildReporter {
 
             if (trigger.isNotifyOnStartEnabled()) {
                 String startedMessage = processTemplate(
-                        trigger.getDescriptor().getBuildStartedTemplate(),
+                        trigger.getBuildStartedTemplate(),
                         build,
                         listener,
                         getVariables(cause, build, mr)
@@ -61,7 +61,7 @@ public class AssemblaBuildReporter {
 
             try {
                 String description = processTemplate(
-                        trigger.getDescriptor().getBuildDescriptionTemplate(),
+                        trigger.getBuildDescriptionTemplate(),
                         build,
                         listener,
                         getVariables(cause, build, mr)
@@ -96,7 +96,7 @@ public class AssemblaBuildReporter {
         Result result = build.getResult();
 
         String message = processTemplate(
-                trigger.getDescriptor().getBuildResultTemplate(),
+                trigger.getBuildResultTemplate(),
                 build,
                 listener,
                 getVariables(cause, build, mr)

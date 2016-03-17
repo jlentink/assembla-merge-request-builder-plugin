@@ -19,17 +19,5 @@
     <f:validateButton
        title="${%Test credentials}" progress="${%Checking...}"
        method="testCredentials" with="assemblaHost,ignoreSSLErrors,botApiKey,botApiSecret" />
-    <f:entry title="Build description template" field="buildDescriptionTemplate" help="/plugin/assembla-merge-request-builder/help-buildTemplateVariables.html"
-      description="Build description. Can be customized with variables.">
-      <f:textarea />
-    </f:entry>
-    <f:entry title="Build started message template" field="buildStartedTemplate" help="/plugin/assembla-merge-request-builder/help-buildTemplateVariables.html"
-     description="Message for build result. Will be used for merge request and ticket comments. Can be customized with variables.">
-     <f:textarea />
-    </f:entry>
-    <f:entry title="Build result message template" field="buildResultTemplate" help="/plugin/assembla-merge-request-builder/help-buildTemplateVariables.html"
-      description="Message for build result. Will be used for merge request and ticket comments. Can be customized with variables.">
-      <f:textarea />
-    </f:entry>
   </f:section>
 </j:jelly>
