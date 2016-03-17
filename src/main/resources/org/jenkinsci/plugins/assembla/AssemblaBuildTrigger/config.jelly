@@ -12,6 +12,18 @@
     <f:validateButton
        title="${%Check settings}" progress="${%Checking...}"
        method="checkSettings" with="spaceName,repoName" />
+    <f:entry title="Build description template" field="buildDescriptionTemplate" help="/plugin/assembla-merge-request-builder/help-buildTemplateVariables.html"
+      description="Build description. Can be customized with variables.">
+      <f:textarea default="MR &lt;a title=&quot;$mrTitle&quot; href=&quot;$mrUrl&quot;&gt;#$mrId&lt;/a&gt;: $mrAbbrTitle" />
+    </f:entry>
+    <f:entry title="Build started message template" field="buildStartedTemplate" help="/plugin/assembla-merge-request-builder/help-buildTemplateVariables.html"
+     description="Message for build result. Will be used for merge request and ticket comments. Can be customized with variables.">
+     <f:textarea default="Build started, monitor at $buildUrl" />
+    </f:entry>
+    <f:entry title="Build result message template" field="buildResultTemplate" help="/plugin/assembla-merge-request-builder/help-buildTemplateVariables.html"
+      description="Message for build result. Will be used for merge request and ticket comments. Can be customized with variables.">
+      <f:textarea default="$jobName finished with status: $buildStatus&#10;Source revision: $assemblaRefName&#10;Build results available at: $buildUrl" />
+    </f:entry>
     <f:optionalBlock field="buildOnMergeRequestEnabled" title="Build merge requests"
         description="Trigger build after merge request events" inline="true">
         <f:entry title="Comment after job start" field="notifyOnStartEnabled"
@@ -28,12 +40,11 @@
         </f:entry>
     </f:optionalBlock>
     <f:optionalBlock field="triggerOnPushEnabled" title="Build on push"
-      description="Build when change is pushed to Assembla additionally to merge request trigger"
-      inline="true">
+      description="Build when change is pushed to Assembla additionally to merge request trigger" inline="true">
       <f:entry field="branchesToBuild" title="Branches to build"
         help="/plugin/assembla-merge-request-builder/help-triggerOnPushEnabled.html"
         description="List of branches separated by comma, leave empty to build all branches. Push into specified branches will trigger the build. For example you can specify master to trigger the build against master branch after you merge a merge request.">
-          <f:textbox />
+          <f:textbox default="master" />
       </f:entry>
     </f:optionalBlock>
   </f:section>

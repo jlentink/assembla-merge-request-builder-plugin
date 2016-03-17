@@ -1,7 +1,6 @@
 package org.jenkinsci.plugins.assembla;
 
 import net.sf.json.JSONObject;
-import org.jenkinsci.plugins.assembla.api.models.MergeRequest;
 import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
 import org.jenkinsci.plugins.assembla.cause.AssemblaPushCause;
 import org.kohsuke.stapler.BindInterceptor;
@@ -9,10 +8,6 @@ import org.kohsuke.stapler.RequestImpl;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.WebApp;
 import org.mockito.Mockito;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
@@ -81,7 +76,7 @@ public class AssemblaTestUtil {
     }
 
     public static AssemblaBuildTrigger getTrigger() throws Exception {
-        return new AssemblaBuildTrigger("space-name", "git", true, true, true, true, true, "master");
+        return new AssemblaBuildTrigger("space-name", "git", true, true, true, true, true, "master", "", "", "");
     }
 
     public static AssemblaPushCause getPushCause() {
