@@ -143,7 +143,7 @@ public class WebhookPayload {
     }
 
     public boolean shouldTriggerBuild() {
-        return isChangesetEvent() || (isMergeRequestEvent() && (action.equals("updated") || action.equals("created")));
+        return isChangesetEvent() || (isMergeRequestEvent() && (action.equals("updated") || action.equals("created") || action.equals("reopened")));
     }
 
     @Override
