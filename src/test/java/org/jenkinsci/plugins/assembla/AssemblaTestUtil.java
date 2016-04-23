@@ -107,6 +107,22 @@ public class AssemblaTestUtil {
             "Author"
         );
     }
+    
+    public static AssemblaMergeRequestCause getMergeRequestCauseWithoutDescription() {
+        return new AssemblaMergeRequestCause(
+            12345,
+            "git@git.assembla.com:pavel-fork.git",
+            "git",
+            "develop",
+            "git@git.assembla.com:pavel-test.git",
+            "master",
+            "276dc190d87eff3d28fdfad2d1e6a08a672efe13",
+            null,
+            "12345",
+            "Redirect all old catalog pages to assembla.com/home",
+            "Author"
+        );
+    }
 
     @SuppressWarnings("unchecked")
     private static void setupReq() {

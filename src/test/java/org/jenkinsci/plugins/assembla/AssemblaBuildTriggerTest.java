@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.assembla;
 import hudson.model.AbstractProject;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParametersAction;
+import hudson.model.ParameterValue;
 import org.jenkinsci.plugins.assembla.api.AssemblaClient;
 import org.jenkinsci.plugins.assembla.api.models.SpaceTool;
 import org.jenkinsci.plugins.assembla.cause.AssemblaMergeRequestCause;
@@ -11,6 +12,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Set;
 
@@ -63,6 +65,19 @@ public class AssemblaBuildTriggerTest {
         AssemblaMergeRequestCause mrCause = AssemblaTestUtil.getMergeRequestCause();
         trigger.handleMergeRequest(mrCause);
         verify(project, times(1)).scheduleBuild2(eq(0), eq(mrCause), any(ParametersAction.class));
+    }
+
+    @Test
+    public void testHandleMergeRequestWithoutDescription() throws Exception {
+        project = spy(project);
+        trigger.start(project, true);
+        AssemblaMergeRequestCause mrCause = AssemblaTestUtil.getMergeRequestCauseWithoutDescription();
+        trigger.handleMergeRequest(mrCause);
+
+        ArgumentCaptor<ParametersAction> argument = ArgumentCaptor.forClass(ParametersAction.class);
+        verify(project, times(1)).scheduleBuild2(eq(0), eq(mrCause), argument.capture());
+        ParameterValue descriptionValue = argument.getValue().getParameter("assemblaDescription");
+        assertEquals("", descriptionValue.getValue());
     }
 
     @Test
