@@ -41,7 +41,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>4.3</version>
+      <version>4.5</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -65,8 +65,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <!-- Baseline Jenkins version you use to build and test the plugin. Users must have this version or newer to run. -->
-    <version>1.580.1</version>
+    <version>2.15</version>
     <relativePath />
   </parent>
 
@@ -96,4 +95,9 @@
     <url>http://github.com/jenkinsci/${project.artifactId}</url>
     <tag>HEAD</tag>
   </scm>
+  <properties>
+    <!-- Baseline Jenkins version you use to build and test the plugin. Users must have this version or newer to run. -->
+    <jenkins.version>1.580.1</jenkins.version>
+    <findbugs.failOnError>false</findbugs.failOnError>
+  </properties>
 </project>
