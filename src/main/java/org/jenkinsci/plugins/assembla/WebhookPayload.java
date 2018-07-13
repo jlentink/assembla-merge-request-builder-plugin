@@ -9,10 +9,12 @@ import java.util.regex.Pattern;
 
 /**
  * Created by pavel on 16/2/16.
+ * Updated by jlentink on 13/7/2018
  */
 public class WebhookPayload {
     private static final Pattern mergeRequestIdPattern = Pattern.compile("Merge Request (\\d+)");
     private static final Pattern wikiNamePattern = Pattern.compile("^git@git\\.assembla\\.com:(?:[a-z0-9\\_-]+[\\^/])?([a-z0-9\\_-]+).*$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern wikiAltNamePattern = Pattern.compile("^git@([a-z\\_-]*)git\\.assembla\\.com:(?:[a-z0-9\\_-]+[\\^/])?([a-z0-9\\_-]+).*$", Pattern.CASE_INSENSITIVE);
     private static final Logger LOGGER = Logger.getLogger(WebhookPayload.class.getName());
 
     private String space;
@@ -75,10 +77,14 @@ public class WebhookPayload {
 
     public String getSpaceWikiName() {
         Matcher m = wikiNamePattern.matcher(repositoryUrl);
+        Matcher mAlt = wikiAltNamePattern.matcher(repositoryUrl);
         String wikiName = "";
 
         try {
-            if (m.matches()) {
+            if(mAlt.matches()){
+                LOGGER.info(mAlt.group(2));
+                wikiName = mAlt.group(2);
+            }else if (m.matches()) {
                 LOGGER.info(m.group(1));
                 wikiName = m.group(1);
             }
@@ -149,14 +155,14 @@ public class WebhookPayload {
     @Override
     public String toString() {
         return "WebhookPayload{" +
-                "space='" + space + '\'' +
-                ", action='" + action + '\'' +
-                ", object='" + object + '\'' +
-                ", title='" + title + '\'' +
-                ", body='" + body + '\'' +
-                ", author='" + author + '\'' +
-                ", branch='" + branch + '\'' +
-                ", commitId='" + commitId + '\'' +
-                '}';
+            "space='" + space + '\'' +
+            ", action='" + action + '\'' +
+            ", object='" + object + '\'' +
+            ", title='" + title + '\'' +
+            ", body='" + body + '\'' +
+            ", author='" + author + '\'' +
+            ", branch='" + branch + '\'' +
+            ", commitId='" + commitId + '\'' +
+            '}';
     }
 }
