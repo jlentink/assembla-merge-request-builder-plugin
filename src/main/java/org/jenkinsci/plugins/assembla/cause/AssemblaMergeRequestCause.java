@@ -36,6 +36,7 @@ public class AssemblaMergeRequestCause extends AssemblaCause {
             sourceRepositoryUrl,
             sourceRepositoryName,
             sourceBranch,
+            targetBranch,
             commitId,
             title,
             description,

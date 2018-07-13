@@ -9,6 +9,7 @@ public abstract class AssemblaCause extends Cause {
     private final String sourceRepositoryUrl;
     private final String sourceRepositoryName;
     private final String sourceBranch;
+    private final String targetBranch;
     private final String commitId;
     private final String description;
     private final String sourceSpaceId;
@@ -25,6 +26,10 @@ public abstract class AssemblaCause extends Cause {
 
     public String getSourceBranch() {
         return sourceBranch;
+    }
+
+    public String getTargetBranch() {
+        return targetBranch;
     }
 
     public String getCommitId() {
@@ -50,6 +55,7 @@ public abstract class AssemblaCause extends Cause {
     public AssemblaCause(String sourceRepositoryUrl,
                              String sourceRepositoryName,
                              String sourceBranch,
+                             String targetBranch,
                              String commitId,
                              String title,
                              String description,
@@ -64,6 +70,7 @@ public abstract class AssemblaCause extends Cause {
         this.sourceSpaceId = sourceSpaceId;
         this.title = title;
         this.authorName = authorName;
+        this.targetBranch = targetBranch;
     }
 
     @Override

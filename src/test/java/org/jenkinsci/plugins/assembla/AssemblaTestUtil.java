@@ -84,6 +84,7 @@ public class AssemblaTestUtil {
                 "git@git.assembla.com:pavel-test.git",
                 "git",
                 "master",
+                "",
                 "276dc190d87eff3d28fdfad2d1e6a08a672efe13",
                 "Title",
                 "Description",

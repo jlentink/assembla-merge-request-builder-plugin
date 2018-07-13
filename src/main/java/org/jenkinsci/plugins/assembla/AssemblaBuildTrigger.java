@@ -232,7 +232,9 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         values.put("assemblaSourceSpaceId", new StringParameterValue("assemblaSourceSpaceId", cause.getSourceSpaceId()));
         values.put("assemblaSourceRepositoryUrl", new StringParameterValue("assemblaSourceRepositoryUrl", cause.getSourceRepositoryUrl()));
         values.put("assemblaSourceBranch", new StringParameterValue("assemblaSourceBranch", cause.getSourceBranch()));
+        values.put("assemblaTargetBranch", new StringParameterValue("assemblaTargetBranch", cause.getTargetBranch()));
         values.put("assemblaAuthorName", new StringParameterValue("assemblaAuthorName", cause.getAuthorName()));
+
 
         // The merge request description will be null if no description was entered
         String description = cause.getDescription();
