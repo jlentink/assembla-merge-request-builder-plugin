@@ -64,6 +64,24 @@ public class WebhookPayloadTest {
         assertEquals(payload.getSpaceWikiName(), "pavel-test");
     }
 
+
+    @Test
+    public void testNamespacedSpaceWikiName() throws Exception {
+        payload = new WebhookPayload(
+            "pavel test",
+            "updated",
+            "Merge request",
+            "Merge Request 2945043: Redirect all old catalog pages to assembla.com/home",
+            "Pavel Dotsulenko (pavel.d) updated Merge Request 2945043 (6): Redirect all old catalog pages to assembla.com/home [+0] [-0]\\n\\n    New Version (6) Created\\n",
+            "pavel.d",
+            "master",
+            "git@eu-git.assembla.com:pavelportfolio/pavel-test.2.git",
+            "276dc190d87eff3d28fdfad2d1e6a08a672efe13"
+        );
+
+        assertEquals(payload.getSpaceWikiName(), "pavel-test");
+    }
+
     @Test
     public void testGetRepositoryUrl() throws Exception {
         assertEquals("git@git.assembla.com:pavel-test.2.git", payload.getRepositoryUrl());
