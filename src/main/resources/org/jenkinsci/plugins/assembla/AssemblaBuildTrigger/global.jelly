@@ -2,7 +2,7 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:section title="Assembla Merge Request Builder">
     <f:entry title="Assembla host" field="assemblaHost"
-    description="Default is https://www.assembla.com/. You do not need to change it unless you are using Private Install">
+    description="Default is https://app.assembla.com/.">
       <f:textbox />
     </f:entry>
     <f:entry title="Ignore SSL Errors" field="ignoreSSLErrors"

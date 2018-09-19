@@ -46,7 +46,7 @@ import java.util.logging.Logger;
 public class AssemblaClient {
     private static final Logger LOGGER = Logger.getLogger(AssemblaClient.class.getName());
     private static final String DEFAULT_API_ENDPOINT = "https://api.assembla.com/";
-    private static final String DEFAULT_ASSEMBLA_URL = "https://www.assembla.com/";
+    private static final String DEFAULT_ASSEMBLA_URL = "https://app.assembla.com/";
     private String assemblaHost;
     private String apiKey;
     private String apiSecret;

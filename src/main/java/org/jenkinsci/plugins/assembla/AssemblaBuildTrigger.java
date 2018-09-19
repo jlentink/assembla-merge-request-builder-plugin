@@ -246,7 +246,7 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     public static final class AssemblaBuildTriggerDescriptor extends TriggerDescriptor {
-        private String assemblaHost = "https://www.assembla.com/";
+        private String assemblaHost = "https://app.assembla.com/";
         private String botApiKey = "";
         private Secret botApiSecret;
 
