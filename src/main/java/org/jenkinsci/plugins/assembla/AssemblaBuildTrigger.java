@@ -113,7 +113,8 @@ public class AssemblaBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         values.put("assemblaMergeRequestId", new StringParameterValue("assemblaMergeRequestId", String.valueOf(cause.getMergeRequestId())));
         values.put("assemblaSourceRepositoryName", new StringParameterValue("assemblaSourceRepositoryName", cause.getSourceRepositoryName()));
         values.put("assemblaTargetRepositoryUrl", new StringParameterValue("assemblaTargetRepositoryUrl", cause.getTargetRepositoryUrl()));
-        values.put("assemblaTargetBranch", new StringParameterValue("assemblaTargetBranch", cause.getTargetBranch()));
+        values.put("assemblaTargetBranch", new StringParameterValue("assemblaTargetBranch",
+            cause.getTargetBranch()));
 
         List<ParameterValue> listValues = new ArrayList<>(values.values());
         return job.scheduleBuild2(0, cause, new SafeParametersAction(listValues));
