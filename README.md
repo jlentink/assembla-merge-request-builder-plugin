@@ -17,22 +17,22 @@ This plugin is not using template jobs.
 * Ensure that a Jenkins user exists within your Assembla space, has access to the repository and has permissions to leave comments. Ensure that the user
   has **Member** level access to the project.
 * Install the plugin in Jenkins.
-    * The plugin is hosted on the [Jenkins Plugin repository](https://wiki.jenkins-ci.org/display/JENKINS/Assembla+Merge+Request+Builder+Plugin) 
+    * The plugin is hosted on the [Jenkins Plugin repository](https://wiki.jenkins-ci.org/display/JENKINS/Assembla+Merge+Request+Builder+Plugin)
     * Go to ``Jenkins`` -> ``Manage Plugins`` -> ``Available``
     * Search for ``Assembla Merge Request Builder``
     * And install it
     * Ensure you restart Jenkins
 * Go to ``Manage Jenkins`` -> ``Configure System`` -> ``Assembla Merge Request Builder``
-* Set your ``User API key`` key for the Jenkins user. This can be found by logging into Assembla as Jenkins and going to the [account page](https://www.assembla.com/user/edit/manage_clients) 
+* Set your ``User API key`` key for the Jenkins user. This can be found by logging into Assembla as Jenkins and going to the [account page](https://app.assembla.com/user/edit/manage_clients)
 * Set your ``User API secret`` secret for the Jenkins user. This can be found the same way as API key.
-* Click `Test credentials` button 
+* Click `Test credentials` button
 * Set/change any of the other available parameters as necessary.
 * ``Save`` to preserve your changes.
 * Go to `Manage Jenkins` -> `Configure Global Security` and set `Markup Formatter` to *Safe HTML*. It will make Jenkins display links in build history properly.
 
 ## Webhooks
 * Make sure that you have Webhook Tool installed and you have a git repository in your space already. If no, go to Admin -> Tools -> More -> Webhook section and click "Add" button.
-* Set Assembla webhook to trigger your Jenkins server. Go to https://www.assembla.com/spaces/{your_space_name}/webhooks. Create new webhook, select "Assembla Jenkins plugin" from template, change your Jenkins server URL (Make sure "Code comments" and "Code commits" are checked in `Post updates about` section).
+* Set Assembla webhook to trigger your Jenkins server. Go to https://app.assembla.com/spaces/{your_space_name}/webhooks. Create new webhook, select "Assembla Jenkins plugin" from template, change your Jenkins server URL (Make sure "Code comments" and "Code commits" are checked in `Post updates about` section).
 * You need to configure the Webhook Tool only once per each space.
 * If you are using Jenkins server behind a firewall you need to add IP range of our servers to your whitelist, please contact Support for this information.
 
@@ -52,11 +52,11 @@ This plugin is not using template jobs.
 * In the ``Build Triggers`` section:
     * Check the ``Assembla Triggers`` checkbox
     * Check the Assembla Triggers checkbox and Assembla Merge Request Builder configuration section will appear.
-    * Enter Space name and Repository name and click Check settings button. (For example: If your code browser url is https://www.assembla.com/spaces/pavel-test/git/source, space name will be pavel-test and repo name - git.
+    * Enter Space name and Repository name and click Check settings button. (For example: If your code browser url is https://app.assembla.com/spaces/pavel-test/git/source, space name will be pavel-test and repo name - git.
     * Check Comment and vote merge request to allow Jenkins to post a comment about build result and upvote/downvote merge request
     * If you want to be notified when Jenkins starts the build, check Comment after job start checkbox. Jenkins will post a comment to a merge request and related tickets (if Comment related tickets checkbox is checked).
 
-    
+
 * Configure any other pre build, build or post build actions as necessary
 * ``Save`` to preserve your changes
 
@@ -75,7 +75,7 @@ __Note:__  You should ensure that the 'Global Config user.name Value' and 'Globa
 
 ## Message templates
 
-Plugin allows to customize build messages using templates (``Manage Jenkins`` -> ``Configure System`` -> ``Assembla Merge Request Builder``). 
+Plugin allows to customize build messages using templates (``Manage Jenkins`` -> ``Configure System`` -> ``Assembla Merge Request Builder``).
 You can use any env variables or build parameters in templates. For example, you can mention your QA team to test changes
 or mention merge request author about build result etc. Additionally plugin provides:
 
