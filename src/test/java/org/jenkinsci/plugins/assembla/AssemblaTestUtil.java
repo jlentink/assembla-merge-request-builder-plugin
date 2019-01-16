@@ -68,7 +68,7 @@ public class AssemblaTestUtil {
         jsonObject.put("buildDescriptionTemplate", "MR <a title=\"$mrTitle\" href=\"$mrUrl\">#$mrId</a>: $mrAbbrTitle\"");
         jsonObject.put("buildResultTemplate", "$jobName finished with status: $buildStatus");
         jsonObject.put("buildStartedTemplate", "Build started, monitor at $buildUrl");
-        jsonObject.put("assemblaHost", "https://www.assembla.com");
+        jsonObject.put("assemblaHost", "https://app.assembla.com");
         jsonObject.put("ignoreSSLErrors", false);
 
         AssemblaBuildTrigger.getDesc().configure(req, jsonObject);

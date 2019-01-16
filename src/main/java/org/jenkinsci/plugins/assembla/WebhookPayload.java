@@ -81,10 +81,10 @@ public class WebhookPayload {
         String wikiName = "";
 
         try {
-            if(mAlt.matches()){
+            if (mAlt.matches()){
                 LOGGER.info(mAlt.group(2));
                 wikiName = mAlt.group(2);
-            }else if (m.matches()) {
+            } else if (m.matches()) {
                 LOGGER.info(m.group(1));
                 wikiName = m.group(1);
             }
